@@ -132,6 +132,36 @@ def main():
         page.screenshot(path=str(OUTPUT / 'preview_zoom_mobile.png'), full_page=True)
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
         page.click('#back')
+        # Exercise real motion as well as the reduced-motion checks above.
+        page.emulate_media(reduced_motion='no-preference')
+        page.reload()
+        page.set_viewport_size({'width': 1440, 'height': 1250})
+        page.select_option('#month', page.locator('#slider').get_attribute('max'))
+        page.evaluate('openCross(0,0)')
+        assert page.locator('.sankey-transition-layer').count() == 1
+        assert page.locator('#cross-chart').count() == 1
+        assert page.locator('#chart').count() == 1
+        page.wait_for_timeout(550)
+        assert page.locator('.sankey-transition-layer').count() == 0
+        page.click('#back')
+        page.wait_for_timeout(550)
+        assert page.locator('#chart').is_visible()
+        # Rapid reversal and a new analysis must leave no stale snapshot/styles.
+        page.evaluate('openCross(0,1);closeCross();openCross(null,0)')
+        page.wait_for_timeout(550)
+        assert page.locator('#cross-chart').count() == 1
+        assert page.locator('.sankey-transition-layer').count() == 0
+        page.evaluate("closeCross();selectType('produtos')")
+        assert page.locator('#chart').is_visible()
+        assert page.locator('.sankey-transition-layer').count() == 0
+        assert page.evaluate('document.querySelector(".chart").getAnimations().length') == 0
+        page.set_viewport_size({'width': 390, 'height': 844})
+        page.evaluate('openCross(0,0)')
+        page.wait_for_timeout(550)
+        assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+        page.keyboard.press('Escape')
+        page.wait_for_timeout(550)
+        assert page.locator('#chart').is_visible()
         assert not errors, errors
         page.close()
         (OUTPUT / 'validacao_navegador.json').write_text(json.dumps({'analises': checked, 'erros_js': errors,
@@ -140,6 +170,7 @@ def main():
              'cruzamento_fluxo_mes_produto': True, 'titulos_cruzamento_teclado': True,
              'cobertura_cruzamento_estrita': True,
              'detalhe_substitui_grafico': True, 'voltar_preserva_selecao': True,
+             'transicao_detalhe_desktop_mobile': True, 'transicao_navegacao_rapida': True,
              'velocidades_4x_8x': True, 'periodo_acima_bolinha': True}, indent=2), encoding='utf-8')
         browser.close()
         print('16 análises: navegador, moeda, extremos, exportações, link, reprodução e mobile OK')

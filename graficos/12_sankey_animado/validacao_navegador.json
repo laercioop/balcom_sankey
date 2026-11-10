@@ -30,6 +30,8 @@
   "cobertura_cruzamento_estrita": true,
   "detalhe_substitui_grafico": true,
   "voltar_preserva_selecao": true,
+  "transicao_detalhe_desktop_mobile": true,
+  "transicao_navegacao_rapida": true,
   "velocidades_4x_8x": true,
   "periodo_acima_bolinha": true
 }

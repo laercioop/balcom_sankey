@@ -27,6 +27,7 @@ dialog{width:min(850px,calc(100% - 24px));max-height:88vh;border:1px solid #d4d8
 @media(max-width:1000px){.stage{margin-top:0}.selection-controls{margin-top:18px;gap:8px}.sidebar .tag{margin-top:10px}.sidebar h1{font-size:20px}}
 [hidden]{display:none!important}#back{align-self:flex-start;margin-top:8px;width:174px;height:78px;padding:0;font-size:32px;flex-shrink:0}.cross-view{margin:18px 185px 0;min-height:650px}.cross-view h2{font-size:21px;margin:0 0 8px}.cross-view p{font-size:12px;line-height:1.5;margin:8px 0}.cross-mode .center-info{display:none}.cross-view svg{min-width:700px}.cross-view .cross-scroll{overflow-x:auto;width:100%}
 @media(max-width:1000px){.cross-view{margin:0;min-height:0}.cross-mode .chart{grid-row:2}}
+.chart{position:relative}.sankey-transition-layer{position:absolute;pointer-events:none;z-index:2;overflow:hidden}.sankey-transition-layer>*{margin:0!important;width:100%;height:100%}
 </style>
 <main>
  <div class="stage">
@@ -76,6 +77,7 @@ const date=s=>months[Number(s.slice(5))-1]+'/'+s.slice(0,4);
 const sum=a=>a.reduce((s,v)=>s+v,0);
 let country='brasil',mode='mensal',type='parceiros',index=0,playing=false,timer=null,raf=null,current=null,items=[];
 let crossSelection=null,crossTrigger=null;
+let finishViewTransition=null;
 const dataset=()=>DATA[[country,type,mode].join('_')];
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function el(tag,attrs={},parent=$('drawing')){const e=document.createElementNS(NS,tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,v);parent.appendChild(e);return e}
@@ -165,18 +167,51 @@ function crossRows(side,i){
  let cursor=start;while(cursor<=f.date){if(!covered.has(cursor))return {error:'O cruzamento Produto × País não cobre todo este período. Nenhum mês foi substituído. Cobertura disponível: '+date([...covered].sort()[0])+' a '+date([...covered].sort().at(-1))+'.'};const [y,m]=cursor.split('-').map(Number);cursor=m===12?(y+1)+'-01':y+'-'+String(m+1).padStart(2,'0')}
  return {rows:rows.filter(r=>r.fluxo===fluxo&&r.date>=start&&r.date<=f.date&&(i===null||(type==='produtos'?r.produto===d.names[i]:r.bloco===d.names[i])))};
 }
+// Keep the live view immediately usable; only its visual snapshot fades away.
+// Cancelling before another navigation prevents stale layers or delayed state changes.
+function transitionView(outgoing,incoming,update,entering=true,side=0){
+ if(finishViewTransition)finishViewTransition();
+ const host=outgoing.parentElement;
+ if(reduce||!host.animate){update();return}
+ const before=host.getBoundingClientRect(),bounds=outgoing.getBoundingClientRect();
+ const layer=document.createElement('div'),snapshot=outgoing.cloneNode(true);
+ layer.className='sankey-transition-layer';layer.setAttribute('aria-hidden','true');layer.inert=true;
+ for(const node of [snapshot,...snapshot.querySelectorAll('[id]')])node.removeAttribute('id');
+ layer.style.cssText=`left:${bounds.left-before.left+host.scrollLeft}px;top:${bounds.top-before.top+host.scrollTop}px;width:${bounds.width}px;height:${bounds.height}px`;
+ layer.appendChild(snapshot);
+ update();
+ const after=host.getBoundingClientRect();host.appendChild(layer);
+ const direction=entering?1:-1,offset=(side?-1:1)*direction*18;
+ const options={duration:440,easing:'cubic-bezier(.22,.61,.36,1)'};
+ const overflow=host.style.overflowY;host.style.overflowY='hidden';
+ const animations=[
+  layer.animate([{opacity:1,transform:'translateX(0) scale(1)'},{opacity:0,transform:`translateX(${-offset}px) scale(${entering?1.035:.97})`}],options),
+  incoming.animate([{opacity:0,transform:`translateX(${offset}px) scale(${entering ? .97 : 1.035})`},{opacity:1,transform:'translateX(0) scale(1)'}],options),
+  host.animate([{height:before.height+'px'},{height:after.height+'px'}],options)
+ ];
+ const cleanup=()=>{for(const animation of animations)animation.cancel();layer.remove();host.style.overflowY=overflow;if(finishViewTransition===cleanup)finishViewTransition=null};
+ finishViewTransition=cleanup;
+ Promise.all(animations.map(animation=>animation.finished)).then(cleanup,()=>{});
+}
 function openCross(i,side){
  pause();if(raf){cancelAnimationFrame(raf);raf=null;show()}
- crossTrigger=document.activeElement;crossSelection={i,side};
- $('chart').setAttribute('hidden','');$('cross-view').hidden=false;$('back').hidden=false;
- document.querySelector('.stage').classList.add('cross-mode');
- renderCrossView();$('cross-title').focus({preventScroll:true});
+ const outgoing=crossSelection?$('cross-view'):$('chart');
+ crossTrigger=document.activeElement;
+ transitionView(outgoing,$('cross-view'),()=>{
+  crossSelection={i,side};
+  $('chart').setAttribute('hidden','');$('cross-view').hidden=false;$('back').hidden=false;
+  document.querySelector('.stage').classList.add('cross-mode');
+  renderCrossView();$('cross-title').focus({preventScroll:true});
+ },true,side);
 }
 function closeCross(restoreFocus=true){
  if(!crossSelection)return;
- pause();crossSelection=null;$('chart').removeAttribute('hidden');$('cross-view').hidden=true;$('back').hidden=true;
- document.querySelector('.stage').classList.remove('cross-mode');show();
- if(restoreFocus&&crossTrigger?.isConnected)crossTrigger.focus({preventScroll:true});
+ const side=crossSelection.side;
+ transitionView($('cross-view'),$('chart'),()=>{
+  pause();crossSelection=null;$('chart').removeAttribute('hidden');$('cross-view').hidden=true;$('back').hidden=true;
+  document.querySelector('.stage').classList.remove('cross-mode');show();
+  if(restoreFocus&&crossTrigger?.isConnected)crossTrigger.focus({preventScroll:true});
+ },false,side);
 }
 $('back').onclick=()=>closeCross();
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&crossSelection&&!$('zoom').open){e.preventDefault();closeCross()}});
@@ -252,6 +287,7 @@ $('zoom').onclick=e=>{if(e.target===$('zoom')){const r=$('zoom').getBoundingClie
 function schedule(){clearTimeout(timer);timer=setTimeout(()=>{if(!playing)return;if(index===dataset().frames.length-1){if(!$('loop').checked){pause();return}index=0}else index++;show(true);schedule()},Number($('speed').value))}
 function selectType(t,first=false){
  closeCross(false);
+ if(finishViewTransition)finishViewTransition();
  pause();if(raf){cancelAnimationFrame(raf);raf=null}const previous=dataset().frames[index]?.date;
  type=t;country=$('country').value;mode=$('mode').value;const d=dataset();
  index=first?d.frames.length-1:d.frames.findIndex(f=>f.date===previous);
