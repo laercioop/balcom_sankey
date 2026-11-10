@@ -23,21 +23,26 @@ details{margin-top:10px;border-top:1px solid #e8e8e8;padding-top:8px;font-size:1
 dialog{width:min(850px,calc(100% - 24px));max-height:88vh;border:1px solid #d4d8dc;border-radius:10px;padding:20px;color:#515151;overflow:auto}dialog::backdrop{background:#172b4259}dialog header{gap:10px}dialog h2{font-size:21px;margin:0}dialog p{font-size:13px;line-height:1.5;margin:10px 0}.zoom-summary{display:flex;gap:22px;flex-wrap:wrap;margin:12px 0}.zoom-summary strong{display:block;font-size:21px}.zoom-summary span{font-size:12px;color:#808080}.zoom-table{width:100%;border-collapse:collapse;font-size:13px}.zoom-table th,.zoom-table td{padding:8px 5px;border-bottom:1px solid #eee;text-align:right;font-variant-numeric:tabular-nums}.zoom-table th:first-child,.zoom-table td:first-child{text-align:left;width:40%}.zoom-table th{font-size:11px;color:#808080}.zoom-bar{height:6px;margin-top:5px;border-radius:2px}.negative{color:#b94e40}.positive{color:#397951}dialog h3{font-size:15px;margin:16px 0 5px}
 @media(max-width:1000px){main{padding:14px}h1{font-size:23px}.stage{display:grid;grid-template-columns:1fr 1fr;gap:12px}.sidebar{position:static;width:auto;gap:8px}.sidebar .metric{margin-top:4px}.sidebar-left{grid-column:1;grid-row:1}.sidebar-right{grid-column:2;grid-row:1}.center-info{position:static;transform:none;grid-column:1/-1;grid-row:2;display:flex;justify-content:center;align-items:center;gap:25px}.center-info .period{margin:0}.chart{grid-column:1/-1;grid-row:3}.metric strong{font-size:21px}.limits{margin-left:52px;margin-right:52px}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+.stage{margin-top:38px}.sidebar-left{top:20px;gap:0}.sidebar-right{top:128px}.sidebar h1{font-size:21px;line-height:1.25;letter-spacing:-.3px}.selection-controls{display:flex;flex-direction:column;gap:12px;margin-top:42px}.sidebar .tag{margin-top:22px;line-height:1.5;font-size:12px}
+@media(max-width:1000px){.stage{margin-top:0}.selection-controls{margin-top:18px;gap:8px}.sidebar .tag{margin-top:10px}.sidebar h1{font-size:20px}}
 </style>
 <main>
- <header><h1 id="heading">Balança comercial · Sankeys</h1><span class="tag" id="unit"></span></header>
  <div class="stage">
  <aside class="sidebar sidebar-left" aria-label="Seleção da análise">
+  <h1 id="heading">Balança comercial · Sankeys</h1>
+  <div class="selection-controls">
   <label>País <select id="country"><option value="brasil">Brasil</option><option value="eua">EUA</option><option value="ue">UE27</option><option value="china">China</option></select></label>
   <label>Período <select id="mode"><option value="mensal">Mensal dessazonalizado</option><option value="12m">Acumulado em 12 meses</option></select></label>
   <div class="tabs" role="group" aria-label="Análise"><button class="active" data-type="parceiros" aria-pressed="true">Parceiros</button><button data-type="produtos" aria-pressed="false">Produtos</button></div>
   <div class="metric"><span>Exportações</span><strong id="exp"></strong></div>
+  </div>
  </aside>
  <aside class="sidebar sidebar-right" aria-label="Reprodução e mês">
   <button id="play" class="primary">▶ Reproduzir</button>
   <label>Velocidade <select id="speed"><option value="1800">Lenta</option><option value="1000" selected>Normal</option><option value="500">Rápida (2×)</option><option value="250">Super rápida (4×)</option><option value="125">Super ultra rápida (8×)</option></select></label>
   <label>Mês <select id="month" aria-label="Mês exibido"></select></label>
   <div class="metric"><span>Importações</span><strong id="imp"></strong></div>
+  <span class="tag" id="unit"></span>
  </aside>
  <div class="center-info">
   <div class="metric"><span id="balance-label">Saldo</span><strong id="balance"></strong></div>
