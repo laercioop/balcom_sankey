@@ -25,7 +25,7 @@ dialog{width:min(850px,calc(100% - 24px));max-height:88vh;border:1px solid #d4d8
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
 .stage{margin-top:0}.sidebar-left{top:20px;gap:0}.sidebar-right{top:128px}.sidebar h1{font-size:21px;line-height:1.25;letter-spacing:-.3px}.selection-controls{display:flex;flex-direction:column;gap:12px;margin-top:42px}.sidebar .tag{margin-top:22px;line-height:1.5;font-size:12px}
 @media(max-width:1000px){.stage{margin-top:0}.selection-controls{margin-top:18px;gap:8px}.sidebar .tag{margin-top:10px}.sidebar h1{font-size:20px}}
-[hidden]{display:none!important}#back{align-self:flex-start;margin-top:8px}.cross-view{margin:18px 185px 0;min-height:650px}.cross-view h2{font-size:21px;margin:0 0 8px}.cross-view p{font-size:12px;line-height:1.5;margin:8px 0}.cross-mode .center-info{display:none}.cross-view svg{min-width:700px}.cross-view .cross-scroll{overflow-x:auto;width:100%}
+[hidden]{display:none!important}#back{align-self:flex-start;margin-top:8px;width:174px;height:78px;padding:0;font-size:32px;flex-shrink:0}.cross-view{margin:18px 185px 0;min-height:650px}.cross-view h2{font-size:21px;margin:0 0 8px}.cross-view p{font-size:12px;line-height:1.5;margin:8px 0}.cross-mode .center-info{display:none}.cross-view svg{min-width:700px}.cross-view .cross-scroll{overflow-x:auto;width:100%}
 @media(max-width:1000px){.cross-view{margin:0;min-height:0}.cross-mode .chart{grid-row:2}}
 </style>
 <main>
@@ -37,7 +37,7 @@ dialog{width:min(850px,calc(100% - 24px));max-height:88vh;border:1px solid #d4d8
   <label>Período <select id="mode"><option value="mensal">Mensal dessazonalizado</option><option value="12m">Acumulado em 12 meses</option></select></label>
   <div class="tabs" role="group" aria-label="Análise"><button class="active" data-type="parceiros" aria-pressed="true">Parceiros</button><button data-type="produtos" aria-pressed="false">Produtos</button></div>
   <div class="metric"><span>Exportações</span><strong id="exp"></strong></div>
-  <button id="back" hidden>← Voltar</button>
+  <button id="back" class="primary" hidden>← Voltar</button>
   </div>
  </aside>
  <aside class="sidebar sidebar-right" aria-label="Reprodução e mês">
