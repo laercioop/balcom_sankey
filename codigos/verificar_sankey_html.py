@@ -24,6 +24,8 @@ def main():
                     page.click('[data-type="' + analysis + '"]')
                     for index in [0, int(page.locator('#slider').get_attribute('max'))]:
                         page.select_option('#month', str(index))
+                        assert page.locator('#time-current').inner_text() == page.locator('#period').inner_text()
+                        assert page.locator('#slider').get_attribute('aria-valuetext') == page.locator('#period').inner_text()
                         assert page.evaluate("document.querySelectorAll('path[d*=NaN]').length") == 0
                         assert page.evaluate("document.querySelectorAll('path[d*=Infinity]').length") == 0
                         assert page.evaluate("(()=>{const g=geometry(dataset().frames[index]);return Math.abs(sum(g.filter(p=>p.side===0).map(p=>p.v))-sum(g.filter(p=>p.side===1).map(p=>p.v)))})()") < 1e-8
@@ -67,6 +69,14 @@ def main():
         page.wait_for_timeout(1200)
         assert int(page.locator('#slider').input_value()) > 0
         page.click('#play')
+        for speed, minimum in [('250', 1), ('125', 2)]:
+            page.select_option('#speed', speed)
+            page.select_option('#month', '0')
+            page.click('#play')
+            page.wait_for_timeout(650)
+            page.click('#play')
+            assert int(page.locator('#slider').input_value()) >= minimum
+            assert page.locator('#time-current').inner_text() == page.locator('#period').inner_text()
         page.set_viewport_size({'width': 390, 'height': 844})
         page.screenshot(path=str(OUTPUT / 'preview_mobile.png'), full_page=True)
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
@@ -78,7 +88,8 @@ def main():
         page.close()
         (OUTPUT / 'validacao_navegador.json').write_text(json.dumps({'analises': checked, 'erros_js': errors,
              'exportacoes_svg_csv': True, 'link_preservado': True, 'reproducao': True, 'mobile': True,
-             'zoom_saldo_16_analises': True, 'zoom_categoria_teclado': True, 'zoom_mobile': True}, indent=2), encoding='utf-8')
+             'zoom_saldo_16_analises': True, 'zoom_categoria_teclado': True, 'zoom_mobile': True,
+             'velocidades_4x_8x': True, 'periodo_acima_bolinha': True}, indent=2), encoding='utf-8')
         browser.close()
         print('16 análises: navegador, moeda, extremos, exportações, link, reprodução e mobile OK')
 

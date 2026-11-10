@@ -24,5 +24,7 @@
   "mobile": true,
   "zoom_saldo_16_analises": true,
   "zoom_categoria_teclado": true,
-  "zoom_mobile": true
+  "zoom_mobile": true,
+  "velocidades_4x_8x": true,
+  "periodo_acima_bolinha": true
 }

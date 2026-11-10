@@ -11,38 +11,41 @@ h1{font-size:27px;margin:0;font-weight:700;letter-spacing:-.5px}.tag{font-size:1
 button,select,input{font:inherit}button,select{background:white;border:1px solid #d4d8dc;border-radius:5px;padding:8px 13px;color:#515151;cursor:pointer}
 button:hover{background:#f0f5fa}button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #4a7fb5;outline-offset:3px}
 button.active,button.primary{background:#4a7fb5;color:white;border-color:#4a7fb5}
-.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0 10px}.tabs{display:flex;gap:6px;margin-right:auto}
-.toolbar label{font-size:13px;display:flex;align-items:center;gap:8px}.metrics{display:flex;gap:50px;border-top:1px solid #e8e8e8;padding-top:9px}
+.stage{position:relative;margin-top:6px}.sidebar{position:absolute;top:80px;width:165px;z-index:1;display:flex;flex-direction:column;gap:12px}.sidebar-left{left:0}.sidebar-right{right:0}.sidebar label{font-size:12px;display:flex;flex-direction:column;gap:5px}.sidebar select{width:100%;padding:7px 6px;font-size:12px}.tabs{display:flex;gap:4px}.tabs button{padding:7px 8px;font-size:12px}.sidebar .metric{margin-top:18px}.center-info{position:absolute;top:20px;left:50%;transform:translateX(-50%);text-align:center;z-index:1;pointer-events:none}.center-info .period{margin-top:14px}.center-info .period span{max-width:270px;font-size:11px;line-height:1.3}
 .metric span{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:#808080}.metric strong{font-size:25px;font-weight:600;font-variant-numeric:tabular-nums}
-.period{margin-left:auto;text-align:right}.period strong{font-size:28px}.period span{text-transform:none;letter-spacing:0}
+.period strong{font-size:25px}.period span{text-transform:none;letter-spacing:0}
 .chart{width:100%;overflow-x:auto}svg{display:block;width:100%;min-width:820px;height:auto}svg text{font-family:'Segoe UI',Arial,sans-serif;fill:#515151}
 .band{transition:fill-opacity .12s}.band:hover{fill-opacity:.85}.category{cursor:zoom-in}.category:focus-visible{outline:none}.category:focus-visible .band{fill-opacity:.85;stroke:#515151;stroke-width:2}
-.timeline{display:flex;align-items:center;gap:10px;margin-top:2px}.timeline input{flex:1;min-width:80px;accent-color:#4a7fb5;cursor:pointer}.timeline button{min-width:42px}
+.timeline{position:relative;display:flex;align-items:center;gap:10px;margin-top:-4px}.timeline input{flex:1;min-width:80px;accent-color:#4a7fb5;cursor:pointer}.timeline button{min-width:42px;height:26px;padding:2px 13px}.time-current{position:absolute;bottom:calc(50% + 9px);transform:translateX(-50%);color:#4a7fb5;background:#fff;font-size:12px;font-weight:600;white-space:nowrap;pointer-events:none;padding:0 3px}
 .limits{display:flex;justify-content:space-between;margin:6px 54px 0;font-size:12px;color:#808080}
 .below{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-top:9px;font-size:12px;color:#808080}.below label{display:flex;align-items:center;gap:5px;cursor:pointer}
 details{margin-top:10px;border-top:1px solid #e8e8e8;padding-top:8px;font-size:12px;line-height:1.6;color:#808080}summary{cursor:pointer;color:#515151}details p{max-width:950px;margin:8px 0}
 dialog{width:min(850px,calc(100% - 24px));max-height:88vh;border:1px solid #d4d8dc;border-radius:10px;padding:20px;color:#515151;overflow:auto}dialog::backdrop{background:#172b4259}dialog header{gap:10px}dialog h2{font-size:21px;margin:0}dialog p{font-size:13px;line-height:1.5;margin:10px 0}.zoom-summary{display:flex;gap:22px;flex-wrap:wrap;margin:12px 0}.zoom-summary strong{display:block;font-size:21px}.zoom-summary span{font-size:12px;color:#808080}.zoom-table{width:100%;border-collapse:collapse;font-size:13px}.zoom-table th,.zoom-table td{padding:8px 5px;border-bottom:1px solid #eee;text-align:right;font-variant-numeric:tabular-nums}.zoom-table th:first-child,.zoom-table td:first-child{text-align:left;width:40%}.zoom-table th{font-size:11px;color:#808080}.zoom-bar{height:6px;margin-top:5px;border-radius:2px}.negative{color:#b94e40}.positive{color:#397951}dialog h3{font-size:15px;margin:16px 0 5px}
-@media(max-width:700px){main{padding:18px 14px}h1{font-size:23px}.metrics{gap:20px;flex-wrap:wrap}.metric strong{font-size:21px}.period{margin-left:0}.toolbar{gap:7px}.tabs{width:100%}.limits{margin-left:52px;margin-right:52px}}
+@media(max-width:1000px){main{padding:14px}h1{font-size:23px}.stage{display:grid;grid-template-columns:1fr 1fr;gap:12px}.sidebar{position:static;width:auto;gap:8px}.sidebar .metric{margin-top:4px}.sidebar-left{grid-column:1;grid-row:1}.sidebar-right{grid-column:2;grid-row:1}.center-info{position:static;transform:none;grid-column:1/-1;grid-row:2;display:flex;justify-content:center;align-items:center;gap:25px}.center-info .period{margin:0}.chart{grid-column:1/-1;grid-row:3}.metric strong{font-size:21px}.limits{margin-left:52px;margin-right:52px}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
 </style>
 <main>
  <header><h1 id="heading">Balança comercial · Sankeys</h1><span class="tag" id="unit"></span></header>
- <div class="toolbar">
+ <div class="stage">
+ <aside class="sidebar sidebar-left" aria-label="Seleção da análise">
   <label>País <select id="country"><option value="brasil">Brasil</option><option value="eua">EUA</option><option value="ue">UE27</option><option value="china">China</option></select></label>
   <label>Período <select id="mode"><option value="mensal">Mensal dessazonalizado</option><option value="12m">Acumulado em 12 meses</option></select></label>
   <div class="tabs" role="group" aria-label="Análise"><button class="active" data-type="parceiros" aria-pressed="true">Parceiros</button><button data-type="produtos" aria-pressed="false">Produtos</button></div>
-  <button id="play" class="primary">▶ Reproduzir</button>
-  <label>Velocidade <select id="speed"><option value="1800">Lenta</option><option value="1000" selected>Normal</option><option value="500">Rápida</option></select></label>
-  <label>Mês <select id="month" aria-label="Mês exibido"></select></label>
- </div>
- <div class="metrics">
   <div class="metric"><span>Exportações</span><strong id="exp"></strong></div>
+ </aside>
+ <aside class="sidebar sidebar-right" aria-label="Reprodução e mês">
+  <button id="play" class="primary">▶ Reproduzir</button>
+  <label>Velocidade <select id="speed"><option value="1800">Lenta</option><option value="1000" selected>Normal</option><option value="500">Rápida (2×)</option><option value="250">Super rápida (4×)</option><option value="125">Super ultra rápida (8×)</option></select></label>
+  <label>Mês <select id="month" aria-label="Mês exibido"></select></label>
   <div class="metric"><span>Importações</span><strong id="imp"></strong></div>
+ </aside>
+ <div class="center-info">
   <div class="metric"><span id="balance-label">Saldo</span><strong id="balance"></strong></div>
   <div class="metric period"><strong id="period"></strong><span id="coverage"></span></div>
  </div>
- <div class="chart"><svg id="chart" viewBox="0 0 1280 690" role="group" aria-label="Sankey: clique nas barras para detalhar exportações, importações e saldo"><title id="svg-title"></title><g id="drawing"></g></svg></div>
- <div class="timeline"><button id="prev" aria-label="Mês anterior">‹</button><input type="range" id="slider" min="0" value="0" aria-label="Linha do tempo mensal"><button id="next" aria-label="Mês seguinte">›</button></div>
+ <div class="chart"><svg id="chart" viewBox="-160 0 1600 665" role="group" aria-label="Sankey: clique nas barras para detalhar exportações, importações e saldo"><title id="svg-title"></title><g id="drawing"></g></svg></div>
+ </div>
+ <div class="timeline"><button id="prev" aria-label="Mês anterior">‹</button><input type="range" id="slider" min="0" value="0" aria-label="Linha do tempo mensal"><output id="time-current" class="time-current" for="slider"></output><button id="next" aria-label="Mês seguinte">›</button></div>
  <div class="limits"><span id="start"></span><span id="end"></span></div>
  <div class="below"><label><input type="checkbox" id="fixed" checked> Escala fixa entre os meses</label><label><input type="checkbox" id="loop" checked> Repetir animação</label><span id="status">Passe o mouse nas faixas para ver valores e participações.</span></div>
  <div class="below"><button id="download-svg">Baixar gráfico SVG</button><button id="download-csv">Baixar dados CSV</button><button id="share">Copiar link deste gráfico</button></div>
@@ -72,7 +75,6 @@ function build(){
  $('drawing').replaceChildren();items=[];
  text(320,35,'EXPORTAÇÕES',{'text-anchor':'end','font-size':16,'font-weight':700});
  text(960,35,'IMPORTAÇÕES',{'font-size':16,'font-weight':700});
- text(640,35,dataset().currency+' bi',{'text-anchor':'middle','font-size':13,fill:'#808080'});
  const d=dataset(),names=[...d.names,'Déficit comercial','Superávit comercial'],colors=[...d.colors,'#cd6252','#5c9478'];
  for(let side=0;side<2;side++) for(let i=0;i<names.length;i++){
   const group=el('g',{class:'category',role:'button',tabindex:0,'aria-label':'Detalhar '+names[i]},undefined),path=el('path',{fill:colors[i],'fill-opacity':.36,class:'band'},group),tip=el('title',{},group);
@@ -97,13 +99,13 @@ function geometry(frame){
   values.forEach((side,j)=>side.forEach((v,i)=>maxima[j][i]=Math.max(maxima[j][i],v)));
  }
  function height(values,k){return values.reduce((s,v)=>s+Math.max(v*k,min)+gap,0)-gap}
- let lo=0,hi=available/Math.max(...maxima.map(sum));
+ let lo=0,hi=Math.min(available/Math.max(...maxima.map(sum)),470/Math.max(...($('fixed').checked?d.frames:[frame]).map(f=>Math.max(sum(f.exp),sum(f.imp)))));
  for(let j=0;j<45;j++){const k=(lo+hi)/2;if(Math.max(...maxima.map(v=>height(v,k)))>available)hi=k;else lo=k}
  const scale=lo;
  const result=[];
  [left,right].forEach((values,side)=>{
   const slots=maxima[side].map(v=>Math.max(v*scale,min));
-  const h=sum(slots)+gap*(slots.length-1);let y=50+(available-h)/2,c=50+(available-total*scale)/2;
+  const h=sum(slots)+gap*(slots.length-1);let y=50+(available-h)/2,c=180+(470-total*scale)/2;
   values.forEach((v,i)=>{const thick=v*scale,top=y+(slots[i]-thick)/2;result.push({side,i,v,top,bottom:top+thick,ctop:c,cbottom:c+thick,mid:y+slots[i]/2});c+=thick;y+=slots[i]+gap});
  });
  return result;
@@ -121,9 +123,12 @@ function paint(g){
   const hidden=o.i>=dataset().names.length&&p.v<1e-8;o.group.setAttribute('tabindex',hidden?-1:0);o.group.setAttribute('aria-hidden',String(hidden));o.group.style.pointerEvents=hidden?'none':'';
  });current=g;
 }
+function positionTime(){const slider=$('slider'),ratio=Number(slider.max)?Number(slider.value)/Number(slider.max):0;$('time-current').style.left=(slider.offsetLeft+8+ratio*(slider.clientWidth-16))+'px'}
+new ResizeObserver(positionTime).observe($('slider'));
 function show(animate=false){
  const d=dataset(),f=d.frames[index],ex=sum(f.exp),im=sum(f.imp),bal=ex-im;
  $('slider').value=index;$('month').value=index;$('period').textContent=date(f.date);
+ $('time-current').textContent=date(f.date);$('slider').setAttribute('aria-valuetext',date(f.date));positionTime();
  $('coverage').textContent=(mode==='12m'?'12 meses: '+date(f.start)+' a '+date(f.date):'Mensal dessazonalizado')+' · '+d.frames.length+' observações';
  $('heading').textContent=d.label+' · Balança por '+type;
  $('unit').textContent=d.currency+' bilhões · '+(mode==='mensal'?'Dessazonalizado':'Valores originais');
