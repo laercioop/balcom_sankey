@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Balança comercial · Sankeys</title>
+<style>
+:root{color-scheme:light;font-family:'Segoe UI',Arial,sans-serif;color:#515151;background:#fff}
+*{box-sizing:border-box}body{margin:0}main{max-width:1380px;margin:auto;padding:28px 36px 20px}
+header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+h1{font-size:27px;margin:0;font-weight:700;letter-spacing:-.5px}.tag{font-size:13px;color:#808080}
+button,select,input{font:inherit}button,select{background:white;border:1px solid #d4d8dc;border-radius:5px;padding:8px 13px;color:#515151;cursor:pointer}
+button:hover{background:#f0f5fa}button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #4a7fb5;outline-offset:3px}
+button.active,button.primary{background:#4a7fb5;color:white;border-color:#4a7fb5}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:22px 0 16px}.tabs{display:flex;gap:6px;margin-right:auto}
+.toolbar label{font-size:13px;display:flex;align-items:center;gap:8px}.metrics{display:flex;gap:50px;border-top:1px solid #e8e8e8;padding-top:16px}
+.metric span{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:#808080}.metric strong{font-size:25px;font-weight:600;font-variant-numeric:tabular-nums}
+.period{margin-left:auto;text-align:right}.period strong{font-size:28px}.period span{text-transform:none;letter-spacing:0}
+.chart{width:100%;overflow-x:auto}svg{display:block;width:100%;min-width:820px;height:auto}svg text{font-family:'Segoe UI',Arial,sans-serif;fill:#515151}
+.band{cursor:help;transition:fill-opacity .12s}.band:hover{fill-opacity:.85}
+.timeline{display:flex;align-items:center;gap:10px;margin-top:2px}.timeline input{flex:1;min-width:80px;accent-color:#4a7fb5;cursor:pointer}.timeline button{min-width:42px}
+.limits{display:flex;justify-content:space-between;margin:6px 54px 0;font-size:12px;color:#808080}
+.below{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-top:16px;font-size:12px;color:#808080}.below label{display:flex;align-items:center;gap:5px;cursor:pointer}
+details{margin-top:18px;border-top:1px solid #e8e8e8;padding-top:12px;font-size:12px;line-height:1.6;color:#808080}summary{cursor:pointer;color:#515151}details p{max-width:950px;margin:8px 0}
+@media(max-width:700px){main{padding:18px 14px}h1{font-size:23px}.metrics{gap:20px;flex-wrap:wrap}.metric strong{font-size:21px}.period{margin-left:0}.toolbar{gap:7px}.tabs{width:100%}.limits{margin-left:52px;margin-right:52px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+<main>
+ <header><h1 id="heading">Balança comercial · Sankeys</h1><span class="tag" id="unit"></span></header>
+ <div class="toolbar">
+  <label>País <select id="country"><option value="brasil">Brasil</option><option value="eua">EUA</option><option value="ue">UE27</option><option value="china">China</option></select></label>
+  <label>Período <select id="mode"><option value="mensal">Mensal dessazonalizado</option><option value="12m">Acumulado em 12 meses</option></select></label>
+  <div class="tabs" role="group" aria-label="Análise"><button class="active" data-type="parceiros" aria-pressed="true">Parceiros</button><button data-type="produtos" aria-pressed="false">Produtos</button></div>
+  <button id="play" class="primary">▶ Reproduzir</button>
+  <label>Velocidade <select id="speed"><option value="1800">Lenta</option><option value="1000" selected>Normal</option><option value="500">Rápida</option></select></label>
+  <label>Mês <select id="month" aria-label="Mês exibido"></select></label>
+ </div>
+ <div class="metrics">
+  <div class="metric"><span>Exportações</span><strong id="exp"></strong></div>
+  <div class="metric"><span>Importações</span><strong id="imp"></strong></div>
+  <div class="metric"><span id="balance-label">Saldo</span><strong id="balance"></strong></div>
+  <div class="metric period"><strong id="period"></strong><span id="coverage"></span></div>
+ </div>
+ <div class="chart"><svg id="chart" viewBox="0 0 1280 790" role="img" aria-label="Sankey mensal: exportações à esquerda, importações à direita e saldo para fechar os fluxos"><title id="svg-title"></title><g id="drawing"></g></svg></div>
+ <div class="timeline"><button id="prev" aria-label="Mês anterior">‹</button><input type="range" id="slider" min="0" value="0" aria-label="Linha do tempo mensal"><button id="next" aria-label="Mês seguinte">›</button></div>
+ <div class="limits"><span id="start"></span><span id="end"></span></div>
+ <div class="below"><label><input type="checkbox" id="fixed" checked> Escala fixa entre os meses</label><label><input type="checkbox" id="loop" checked> Repetir animação</label><span id="status">Passe o mouse nas faixas para ver valores e participações.</span></div>
+ <div class="below"><button id="download-svg">Baixar gráfico SVG</button><button id="download-csv">Baixar dados CSV</button><button id="share">Copiar link deste gráfico</button></div>
+ <details><summary>Sobre os dados e a animação</summary>
+  <p>Fontes: MDIC (Brasil), Census / UN Comtrade (EUA), Eurostat Comext (UE27), GACC / Bloomberg (China). Valores em euros para UE27 e dólares americanos nos demais países. Mensal: ajuste X-13 direto por categoria; totais indiretos pela soma das séries ajustadas. Parceiros e produtos podem ter totais dessazonalizados diferentes. O histórico mensal começa no primeiro mês com ajuste disponível em todas as categorias. Acumulados de 12 meses usam valores originais; produtos chineses incorporam os acumulados publicados. Janelas sem cobertura completa são omitidas. Cada análise tem seu próprio último mês disponível.</p>
+  <p>Exportações à esquerda e importações à direita. Superávit ou déficit fecha a identidade contábil. O centro não representa relações bilaterais entre categorias. Ordem e cores seguem a pasta 11, com ranking fixo pela corrente de comércio dos últimos 12 meses da base.</p>
+  <p>Com escala fixa, a mesma espessura representa o mesmo valor em todos os meses da análise selecionada. As transições interpolam a geometria entre duas observações; os rótulos e valores correspondem sempre ao mês selecionado. Desative a escala fixa para ampliar cada mês. Os dados estão incorporados neste arquivo; não é necessária conexão com a internet.</p>
+ </details>
+</main>
+<script>
+'use strict';
+const DATA=__DADOS_SANKEY__;
+const $=id=>document.getElementById(id), NS='http://www.w3.org/2000/svg';
+const fmt=v=>v.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1});
+const pct=v=>v.toLocaleString('pt-BR',{maximumFractionDigits:1})+'%';
+const months=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const date=s=>months[Number(s.slice(5))-1]+'/'+s.slice(0,4);
+const sum=a=>a.reduce((s,v)=>s+v,0);
+let country='brasil',mode='mensal',type='parceiros',index=0,playing=false,timer=null,raf=null,current=null,items=[];
+const dataset=()=>DATA[[country,type,mode].join('_')];
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function el(tag,attrs={},parent=$('drawing')){const e=document.createElementNS(NS,tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,v);parent.appendChild(e);return e}
+function text(x,y,s,attrs={},parent){const e=el('text',{x,y,...attrs},parent);e.textContent=s;return e}
+function wrap(s,max=29){const rows=[''];for(const word of s.split(' ')){let n=rows.length-1;if(rows[n]&&rows[n].length+word.length+1>max){rows.push(word)}else{rows[n]+=(rows[n]?' ':'')+word}}return rows}
+function build(){
+ $('drawing').replaceChildren();items=[];
+ text(320,35,'EXPORTAÇÕES',{'text-anchor':'end','font-size':16,'font-weight':700});
+ text(960,35,'IMPORTAÇÕES',{'font-size':16,'font-weight':700});
+ text(640,35,dataset().currency+' bi',{'text-anchor':'middle','font-size':13,fill:'#808080'});
+ const d=dataset(),names=[...d.names,'Déficit comercial','Superávit comercial'],colors=[...d.colors,'#cd6252','#5c9478'];
+ for(let side=0;side<2;side++) for(let i=0;i<names.length;i++){
+  const group=el('g'),path=el('path',{fill:colors[i],'fill-opacity':.36,class:'band'},group),tip=el('title',{},path);
+  const node=el('rect',{width:9,fill:colors[i]},group),center=el('rect',{width:5,fill:colors[i]},group);
+  const label=el('text',{'text-anchor':side?'start':'end','font-size':13,fill:i>=d.names.length?colors[i]:'#515151','font-weight':i>=d.names.length?700:400},group);
+  const rows=wrap(names[i]);rows.forEach((s,j)=>{const t=el('tspan',{x:side?982:298,dy:j?15:0},label);t.textContent=s});
+  const value=el('text',{'text-anchor':side?'end':'start','font-size':13,'font-weight':600,stroke:'white','stroke-width':4,'paint-order':'stroke'},group);
+  items.push({side,i,group,path,node,center,label,value,tip,name:names[i],rows:rows.length});
+ }
+ el('line',{x1:640,x2:640,y1:65,y2:746,stroke:'white','stroke-width':1});
+}
+function geometry(frame){
+ const d=dataset(),n=d.names.length,ex=sum(frame.exp),im=sum(frame.imp),balance=ex-im;
+ const left=[...frame.exp,Math.max(-balance,0),0],right=[...frame.imp,0,Math.max(balance,0)];
+ const total=Math.max(ex,im),gap=5,min=27,available=670;
+ // Fixed slots accommodate each category's historical maximum, including balance.
+ // Thus labels remain stationary and a billion has the same width in every month.
+ const maxima=[left.slice(),right.slice()];
+ if($('fixed').checked)for(const f of d.frames){
+  const b=sum(f.exp)-sum(f.imp),values=[[...f.exp,Math.max(-b,0),0],[...f.imp,0,Math.max(b,0)]];
+  values.forEach((side,j)=>side.forEach((v,i)=>maxima[j][i]=Math.max(maxima[j][i],v)));
+ }
+ function height(values,k){return values.reduce((s,v)=>s+Math.max(v*k,min)+gap,0)-gap}
+ let lo=0,hi=available/Math.max(...maxima.map(sum));
+ for(let j=0;j<45;j++){const k=(lo+hi)/2;if(Math.max(...maxima.map(v=>height(v,k)))>available)hi=k;else lo=k}
+ const scale=lo;
+ const result=[];
+ [left,right].forEach((values,side)=>{
+  const slots=maxima[side].map(v=>Math.max(v*scale,min));
+  const h=sum(slots)+gap*(slots.length-1);let y=65+(available-h)/2,c=65+(available-total*scale)/2;
+  values.forEach((v,i)=>{const thick=v*scale,top=y+(slots[i]-thick)/2;result.push({side,i,v,top,bottom:top+thick,ctop:c,cbottom:c+thick,mid:y+slots[i]/2});c+=thick;y+=slots[i]+gap});
+ });
+ return result;
+}
+function paint(g){
+ items.forEach((o,j)=>{
+  const p=g[j],left=o.side===0,x0=left?329:645,x1=left?635:951;
+  const t0=left?p.top:p.ctop,b0=left?p.bottom:p.cbottom,t1=left?p.ctop:p.top,b1=left?p.cbottom:p.bottom;
+  const mid=(x0+x1)/2;
+  o.path.setAttribute('d',`M${x0},${t0} C${mid},${t0} ${mid},${t1} ${x1},${t1} L${x1},${b1} C${mid},${b1} ${mid},${b0} ${x0},${b0} Z`);
+  o.node.setAttribute('x',left?320:951);o.node.setAttribute('y',p.top);o.node.setAttribute('height',Math.max(0,p.bottom-p.top));
+  o.center.setAttribute('x',left?635:640);o.center.setAttribute('y',p.ctop);o.center.setAttribute('height',Math.max(0,p.cbottom-p.ctop));
+  o.label.setAttribute('y',p.mid-(o.rows-1)*7.5+4);o.value.setAttribute('x',left?342:938);o.value.setAttribute('y',p.mid+4);
+  o.group.setAttribute('opacity',o.i>=dataset().names.length&&p.v<1e-8?0:1);
+ });current=g;
+}
+function show(animate=false){
+ const d=dataset(),f=d.frames[index],ex=sum(f.exp),im=sum(f.imp),bal=ex-im;
+ $('slider').value=index;$('month').value=index;$('period').textContent=date(f.date);
+ $('coverage').textContent=(mode==='12m'?'12 meses: '+date(f.start)+' a '+date(f.date):'Mensal dessazonalizado')+' · '+d.frames.length+' observações';
+ $('heading').textContent=d.label+' · Balança por '+type;
+ $('unit').textContent=d.currency+' bilhões · '+(mode==='mensal'?'Dessazonalizado':'Valores originais');
+ document.title=d.label+' — Balança por '+type+' — '+date(f.date);
+ history.replaceState(null,'','#'+new URLSearchParams({pais:country,analise:type,periodo:mode,mes:f.date}));
+ $('exp').textContent=fmt(ex);$('imp').textContent=fmt(im);$('balance').textContent=fmt(Math.abs(bal));
+ $('balance-label').textContent=bal>=0?'Superávit':'Déficit';$('balance').style.color=bal>=0?'#5c9478':'#cd6252';
+ $('svg-title').textContent=`${d.label} - ${type} - ${date(f.date)} (${mode==='mensal'?'dessaz.':'12 meses'})`;
+ const target=geometry(f);
+ items.forEach((o,j)=>{const v=target[j].v;o.value.textContent=fmt(v);const total=o.side?im:ex;o.tip.textContent=`${o.name}\n${o.side?'Importações':'Exportações'} · ${date(f.date)}\n${d.currency} ${fmt(v)} bi${o.i<d.names.length?' · '+pct(total?v/total*100:0)+' do total':''}`});
+ if(raf)cancelAnimationFrame(raf);
+ if(animate&&!reduce&&current){const from=current,start=performance.now(),duration=Math.min(650,Number($('speed').value)*.72);function tick(now){const t=Math.min(1,(now-start)/duration),e=t*t*(3-2*t);paint(target.map((p,j)=>Object.fromEntries(Object.entries(p).map(([key,v])=>[key,from[j][key]+(v-from[j][key])*e]))));if(t<1)raf=requestAnimationFrame(tick);else raf=null}raf=requestAnimationFrame(tick)}else paint(target);
+}
+function pause(){playing=false;clearTimeout(timer);$('play').textContent='▶ Reproduzir'}
+function schedule(){clearTimeout(timer);timer=setTimeout(()=>{if(!playing)return;if(index===dataset().frames.length-1){if(!$('loop').checked){pause();return}index=0}else index++;show(true);schedule()},Number($('speed').value))}
+function selectType(t,first=false){
+ pause();if(raf){cancelAnimationFrame(raf);raf=null}const previous=dataset().frames[index]?.date;
+ type=t;country=$('country').value;mode=$('mode').value;const d=dataset();
+ index=first?d.frames.length-1:d.frames.findIndex(f=>f.date===previous);
+ if(index<0)index=d.frames.length-1;current=null;
+ $('month').replaceChildren(...d.frames.map((f,i)=>new Option(date(f.date),i)));$('slider').max=d.frames.length-1;
+ $('start').textContent=date(d.frames[0].date);$('end').textContent=date(d.frames.at(-1).date);
+ $('status').textContent='Fonte: '+d.source+'. Passe o mouse nas faixas para ver valores e participações.';
+ document.querySelectorAll('[data-type]').forEach(b=>{const on=b.dataset.type===type;b.classList.toggle('active',on);b.setAttribute('aria-pressed',on)});build();show();}
+ $('play').onclick=()=>{if(playing)pause();else{playing=true;$('play').textContent='Ⅱ Pausar';if(index===dataset().frames.length-1){index=0;show()}schedule()}};
+ $('slider').oninput=()=>{pause();index=Number($('slider').value);show()};$('month').onchange=()=>{pause();index=Number($('month').value);show(true)};
+ function step(delta){pause();index=Math.max(0,Math.min(dataset().frames.length-1,index+delta));show(true)}
+ $('prev').onclick=()=>step(-1);$('next').onclick=()=>step(1);$('fixed').onchange=()=>show();$('speed').onchange=()=>{if(playing)schedule()};
+ document.querySelectorAll('[data-type]').forEach(b=>b.onclick=()=>selectType(b.dataset.type));
+ document.addEventListener('visibilitychange',()=>{if(document.hidden)pause()});
+ $('country').onchange=()=>selectType(type);$('mode').onchange=()=>selectType(type);
+ function download(content,mime,ext){const a=document.createElement('a'),url=URL.createObjectURL(new Blob([content],{type:mime}));a.href=url;a.download=[country,type,mode,dataset().frames[index].date].join('_')+'.'+ext;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+ $('download-svg').onclick=()=>{pause();if(raf)cancelAnimationFrame(raf);show();const svg=$('chart').cloneNode(true);svg.setAttribute('xmlns',NS);const style=document.createElementNS(NS,'style');style.textContent="text{font-family:'Segoe UI',Arial,sans-serif;fill:#515151}";svg.prepend(style);download(new XMLSerializer().serializeToString(svg),'image/svg+xml;charset=utf-8','svg')};
+ $('download-csv').onclick=()=>{const d=dataset(),quote=v=>'"'+String(v).replaceAll('"','""')+'"';const rows=[['pais','analise','periodo','mes','inicio','moeda','categoria','exportacoes_bi','importacoes_bi'],...d.frames.flatMap(f=>d.names.map((n,i)=>[d.label,type,mode,f.date,f.start,d.currency,n,f.exp[i],f.imp[i]]))];download('\ufeff'+rows.map(r=>r.map(quote).join(';')).join('\r\n'),'text/csv;charset=utf-8','csv')};
+ $('share').onclick=async()=>{try{await navigator.clipboard.writeText(location.href);$('status').textContent='Link copiado.'}catch{$('status').textContent='Copie o endereço da página para compartilhar esta seleção.'}};
+ const initial=new URLSearchParams(location.hash.slice(1));
+ if(['brasil','eua','ue','china'].includes(initial.get('pais')))$('country').value=initial.get('pais');
+ if(['mensal','12m'].includes(initial.get('periodo')))$('mode').value=initial.get('periodo');
+ selectType(['parceiros','produtos'].includes(initial.get('analise'))?initial.get('analise'):'parceiros',true);
+ const requested=dataset().frames.findIndex(f=>f.date===initial.get('mes'));if(requested>=0){index=requested;show()}
+
+</script>
+</html>

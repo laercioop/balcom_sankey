@@ -1,0 +1,25 @@
+{
+  "analises": [
+    "brasil_parceiros_mensal",
+    "brasil_produtos_mensal",
+    "brasil_parceiros_12m",
+    "brasil_produtos_12m",
+    "eua_parceiros_mensal",
+    "eua_produtos_mensal",
+    "eua_parceiros_12m",
+    "eua_produtos_12m",
+    "ue_parceiros_mensal",
+    "ue_produtos_mensal",
+    "ue_parceiros_12m",
+    "ue_produtos_12m",
+    "china_parceiros_mensal",
+    "china_produtos_mensal",
+    "china_parceiros_12m",
+    "china_produtos_12m"
+  ],
+  "erros_js": [],
+  "exportacoes_svg_csv": true,
+  "link_preservado": true,
+  "reproducao": true,
+  "mobile": true
+}

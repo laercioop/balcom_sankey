@@ -1,0 +1,150 @@
+{
+  "cobertura": {
+    "brasil": {
+      "parceiros_original": "2026-10",
+      "parceiros_dessaz": "2026-10",
+      "produtos_original": "2026-10",
+      "produtos_dessaz": "2026-10",
+      "principais": [
+        "Argentina",
+        "Canadá",
+        "Chile",
+        "China",
+        "Coreia do Sul",
+        "Estados Unidos",
+        "Japão",
+        "México",
+        "Rússia",
+        "Singapura",
+        "União Europeia",
+        "Índia"
+      ],
+      "produtos_ausentes_historicos": 0
+    },
+    "eua": {
+      "parceiros_original": "2026-09",
+      "parceiros_dessaz": "2026-09",
+      "produtos_original": "2026-08",
+      "produtos_dessaz": "2026-08",
+      "principais": [
+        "Canadá",
+        "China",
+        "Coreia do Sul",
+        "Japão",
+        "México",
+        "Reino Unido",
+        "Suíça",
+        "Tailândia",
+        "Taiwan",
+        "União Europeia",
+        "Vietnã",
+        "Índia"
+      ],
+      "produtos_ausentes_historicos": 0
+    },
+    "ue": {
+      "parceiros_original": "2026-08",
+      "parceiros_dessaz": "2026-08",
+      "produtos_original": "2026-08",
+      "produtos_dessaz": "2026-08",
+      "principais": [
+        "Brasil",
+        "China",
+        "Coreia do Sul",
+        "EUA",
+        "Japão",
+        "Noruega",
+        "Reino Unido",
+        "Rússia",
+        "Suíça",
+        "Turquia",
+        "Índia"
+      ],
+      "produtos_ausentes_historicos": 0
+    },
+    "china": {
+      "parceiros_original": "2026-10",
+      "parceiros_dessaz": "2026-10",
+      "produtos_original": "2026-09",
+      "produtos_dessaz": "2026-09",
+      "principais": [
+        "ASEAN",
+        "Brasil",
+        "Coreia do Sul",
+        "EUA",
+        "Hong Kong",
+        "Japão",
+        "Rússia",
+        "União Europeia",
+        "Índia"
+      ],
+      "produtos_ausentes_historicos": 34
+    }
+  },
+  "bases": [
+    {
+      "arquivo": "brasil_parceiros.csv",
+      "sha256": "689d24f786c9f312249b7f3ced42cc1bd1c96e930ee99e7d536f418a1779fb8a"
+    },
+    {
+      "arquivo": "brasil_parceiros_sa.csv",
+      "sha256": "1c5f17208bc01de6bc24da06ddd3f00f8aa2c027e7f52b05f37ddb176093d94a"
+    },
+    {
+      "arquivo": "brasil_produtos.csv",
+      "sha256": "d44146951f9f077a66e0ff14ee79a660084508a235b4c6b5acfa9c8a1839bd07"
+    },
+    {
+      "arquivo": "brasil_produtos_sa.csv",
+      "sha256": "0fb023e8486557fab66e68ebc88acac401be42756b450d6d27cd62362a701f02"
+    },
+    {
+      "arquivo": "eua_parceiros.csv",
+      "sha256": "47f1756f46b61ab66d84d735f1a909b7e61174bcb6625936a23858b9694b5e1e"
+    },
+    {
+      "arquivo": "eua_parceiros_sa.csv",
+      "sha256": "859bf5ab1389ca0c45f805c3b666bd93b0e153c68ae38092b056f943d2a92f8a"
+    },
+    {
+      "arquivo": "eua_produtos.csv",
+      "sha256": "f4da35bb8dd26cd3e99f0176cccbad48be03d0b03094c019ae5268f58c05e33c"
+    },
+    {
+      "arquivo": "eua_produtos_sa.csv",
+      "sha256": "89c1a2c2715711e059df6a1b8d7899a32ab094fed33ca502820fbaf291fcb7b0"
+    },
+    {
+      "arquivo": "ue_parceiros.csv",
+      "sha256": "f74a3c40f135986d9091371f49c41b3c8270ddc768b92e05016cff9ae7e2a95a"
+    },
+    {
+      "arquivo": "ue_parceiros_sa.csv",
+      "sha256": "816e8caca35ebcfbb221847e9fe723c635c915356c16a82e81d758b5773be5cf"
+    },
+    {
+      "arquivo": "ue_produtos.csv",
+      "sha256": "668f773319bad1a730c2ffa7bec1cbb6c8c979b1350fb3730a646a21cfc10c0a"
+    },
+    {
+      "arquivo": "ue_produtos_sa.csv",
+      "sha256": "12835564704f808a53def41d96a0351bec55cc8eeb7ac914b7bcda5bd5e356d1"
+    },
+    {
+      "arquivo": "china_parceiros.csv",
+      "sha256": "2b9c749eeb7a0992a8459095a3198572feb41269fa49716c7b725db6602aa788"
+    },
+    {
+      "arquivo": "china_parceiros_sa.csv",
+      "sha256": "071e6c2faeaa440813ce43d74439031cf1b43ff411fb2cfa6cd02d29aa0d62c2"
+    },
+    {
+      "arquivo": "china_produtos.csv",
+      "sha256": "221f4aefacf0542d72b4e47720d9eb4907e3ae68c7df6d551be44b511fe3d111"
+    },
+    {
+      "arquivo": "china_produtos_sa.csv",
+      "sha256": "f1275a558122ca5d877cdd93fb6e85149bc8e8e34cafec10e2333ac79a84be1e"
+    }
+  ]
+}
