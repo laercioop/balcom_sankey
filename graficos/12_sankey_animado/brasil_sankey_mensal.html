@@ -5,7 +5,7 @@
 <title>Balança comercial · Sankeys</title>
 <style>
 :root{color-scheme:light;font-family:'Segoe UI',Arial,sans-serif;color:#515151;background:#fff}
-*{box-sizing:border-box}body{margin:0}main{max-width:1380px;margin:auto;padding:18px 36px 14px}
+*{box-sizing:border-box}body{margin:0}main{max-width:1380px;margin:auto;padding:8px 36px 14px}
 header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
 h1{font-size:27px;margin:0;font-weight:700;letter-spacing:-.5px}.tag{font-size:13px;color:#808080}
 button,select,input{font:inherit}button,select{background:white;border:1px solid #d4d8dc;border-radius:5px;padding:8px 13px;color:#515151;cursor:pointer}
@@ -23,7 +23,7 @@ details{margin-top:10px;border-top:1px solid #e8e8e8;padding-top:8px;font-size:1
 dialog{width:min(850px,calc(100% - 24px));max-height:88vh;border:1px solid #d4d8dc;border-radius:10px;padding:20px;color:#515151;overflow:auto}dialog::backdrop{background:#172b4259}dialog header{gap:10px}dialog h2{font-size:21px;margin:0}dialog p{font-size:13px;line-height:1.5;margin:10px 0}.zoom-summary{display:flex;gap:22px;flex-wrap:wrap;margin:12px 0}.zoom-summary strong{display:block;font-size:21px}.zoom-summary span{font-size:12px;color:#808080}.zoom-table{width:100%;border-collapse:collapse;font-size:13px}.zoom-table th,.zoom-table td{padding:8px 5px;border-bottom:1px solid #eee;text-align:right;font-variant-numeric:tabular-nums}.zoom-table th:first-child,.zoom-table td:first-child{text-align:left;width:40%}.zoom-table th{font-size:11px;color:#808080}.zoom-bar{height:6px;margin-top:5px;border-radius:2px}.negative{color:#b94e40}.positive{color:#397951}dialog h3{font-size:15px;margin:16px 0 5px}
 @media(max-width:1000px){main{padding:14px}h1{font-size:23px}.stage{display:grid;grid-template-columns:1fr 1fr;gap:12px}.sidebar{position:static;width:auto;gap:8px}.sidebar .metric{margin-top:4px}.sidebar-left{grid-column:1;grid-row:1}.sidebar-right{grid-column:2;grid-row:1}.center-info{position:static;transform:none;grid-column:1/-1;grid-row:2;display:flex;justify-content:center;align-items:center;gap:25px}.center-info .period{margin:0}.chart{grid-column:1/-1;grid-row:3}.metric strong{font-size:21px}.limits{margin-left:52px;margin-right:52px}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
-.stage{margin-top:38px}.sidebar-left{top:20px;gap:0}.sidebar-right{top:128px}.sidebar h1{font-size:21px;line-height:1.25;letter-spacing:-.3px}.selection-controls{display:flex;flex-direction:column;gap:12px;margin-top:42px}.sidebar .tag{margin-top:22px;line-height:1.5;font-size:12px}
+.stage{margin-top:0}.sidebar-left{top:20px;gap:0}.sidebar-right{top:128px}.sidebar h1{font-size:21px;line-height:1.25;letter-spacing:-.3px}.selection-controls{display:flex;flex-direction:column;gap:12px;margin-top:42px}.sidebar .tag{margin-top:22px;line-height:1.5;font-size:12px}
 @media(max-width:1000px){.stage{margin-top:0}.selection-controls{margin-top:18px;gap:8px}.sidebar .tag{margin-top:10px}.sidebar h1{font-size:20px}}
 </style>
 <main>
@@ -48,7 +48,7 @@ dialog{width:min(850px,calc(100% - 24px));max-height:88vh;border:1px solid #d4d8
   <div class="metric"><span id="balance-label">Saldo</span><strong id="balance"></strong></div>
   <div class="metric period"><strong id="period"></strong><span id="coverage"></span></div>
  </div>
- <div class="chart"><svg id="chart" viewBox="-160 0 1600 665" role="group" aria-label="Sankey: clique nas barras para detalhar exportações, importações e saldo"><title id="svg-title"></title><g id="drawing"></g></svg></div>
+ <div class="chart"><svg id="chart" viewBox="-160 0 1600 755" role="group" aria-label="Sankey: clique nas barras para detalhar exportações, importações e saldo"><title id="svg-title"></title><g id="drawing"></g></svg></div>
  </div>
  <div class="timeline"><button id="prev" aria-label="Mês anterior">‹</button><input type="range" id="slider" min="0" value="0" aria-label="Linha do tempo mensal"><output id="time-current" class="time-current" for="slider"></output><button id="next" aria-label="Mês seguinte">›</button></div>
  <div class="limits"><span id="start"></span><span id="end"></span></div>
@@ -90,12 +90,12 @@ function build(){
   const value=el('text',{'text-anchor':side?'end':'start','font-size':13,'font-weight':600,stroke:'white','stroke-width':4,'paint-order':'stroke'},group);
   items.push({side,i,group,path,node,center,label,value,tip,name:names[i],rows:rows.length});
  }
- el('line',{x1:640,x2:640,y1:50,y2:660,stroke:'white','stroke-width':1});
+ el('line',{x1:640,x2:640,y1:50,y2:750,stroke:'white','stroke-width':1});
 }
 function geometry(frame){
  const d=dataset(),n=d.names.length,ex=sum(frame.exp),im=sum(frame.imp),balance=ex-im;
  const left=[...frame.exp,Math.max(-balance,0),0],right=[...frame.imp,0,Math.max(balance,0)];
- const total=Math.max(ex,im),gap=4,min=27,available=610;
+ const total=Math.max(ex,im),gap=4,min=27,available=700;
  // Fixed slots accommodate each category's historical maximum, including balance.
  // Thus labels remain stationary and a billion has the same width in every month.
  const maxima=[left.slice(),right.slice()];
@@ -104,13 +104,13 @@ function geometry(frame){
   values.forEach((side,j)=>side.forEach((v,i)=>maxima[j][i]=Math.max(maxima[j][i],v)));
  }
  function height(values,k){return values.reduce((s,v)=>s+Math.max(v*k,min)+gap,0)-gap}
- let lo=0,hi=Math.min(available/Math.max(...maxima.map(sum)),470/Math.max(...($('fixed').checked?d.frames:[frame]).map(f=>Math.max(sum(f.exp),sum(f.imp)))));
+ let lo=0,hi=Math.min(available/Math.max(...maxima.map(sum)),560/Math.max(...($('fixed').checked?d.frames:[frame]).map(f=>Math.max(sum(f.exp),sum(f.imp)))));
  for(let j=0;j<45;j++){const k=(lo+hi)/2;if(Math.max(...maxima.map(v=>height(v,k)))>available)hi=k;else lo=k}
  const scale=lo;
  const result=[];
  [left,right].forEach((values,side)=>{
   const slots=maxima[side].map(v=>Math.max(v*scale,min));
-  const h=sum(slots)+gap*(slots.length-1);let y=50+(available-h)/2,c=180+(470-total*scale)/2;
+  const h=sum(slots)+gap*(slots.length-1);let y=50+(available-h)/2,c=180+(560-total*scale)/2;
   values.forEach((v,i)=>{const thick=v*scale,top=y+(slots[i]-thick)/2;result.push({side,i,v,top,bottom:top+thick,ctop:c,cbottom:c+thick,mid:y+slots[i]/2});c+=thick;y+=slots[i]+gap});
  });
  return result;
