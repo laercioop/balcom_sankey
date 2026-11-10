@@ -122,3 +122,20 @@ Validações interrompem o processo em caso de duplicatas, janela incompleta,
 valores negativos/ausentes, parcelas acima do total, ajuste indisponível ou
 divergência com a CGCE brasileira. Confira também as imagens renderizadas.
 Preserve `brutos/` e os CSVs de auditoria.
+
+### Detalhe Produto × País no painel animado
+
+`balanca_sankey_cruzado.py` agrega os CSVs anuais EXP/IMP locais do BALCOM,
+sem download, por mês, produto granular e país individual. Guarda hashes e
+confere as somas contra brasil_produtos.csv em brasil_produto_pais.json.
+Cobertura inicial: jan–out/2026, em US$ bilhões originais, sem ratear ajustes
+sazonais. O detalhe mantém fluxo e período selecionados. Exige cobertura
+integral para 12m; informa indisponibilidade quando falta cobertura ou base.
+Importações: países à esquerda → produtos à direita. Exportações: produtos
+à esquerda → países à direita. Categorias filtram produto ou parceiro/bloco;
+os títulos superiores abrem o fluxo completo. Os 12 maiores países do recorte
+ficam individuais, os demais em Outros países. O saldo mantém a reconciliação
+anterior. EUA/UE/China aguardam bases conjuntas; marginais não geram vínculos.
+O cruzamento substitui o Sankey na própria tela. Voltar fica abaixo do total
+de exportações; Esc retorna também. A linha do tempo atualiza o detalhe e a
+volta preserva mês/país/análise. SVG/CSV exportam o cruzamento quando aberto.

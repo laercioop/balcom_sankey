@@ -25,6 +25,11 @@
   "zoom_saldo_16_analises": true,
   "zoom_categoria_teclado": true,
   "zoom_mobile": true,
+  "cruzamento_fluxo_mes_produto": true,
+  "titulos_cruzamento_teclado": true,
+  "cobertura_cruzamento_estrita": true,
+  "detalhe_substitui_grafico": true,
+  "voltar_preserva_selecao": true,
   "velocidades_4x_8x": true,
   "periodo_acima_bolinha": true
 }

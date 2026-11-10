@@ -25,6 +25,8 @@ dialog{width:min(850px,calc(100% - 24px));max-height:88vh;border:1px solid #d4d8
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
 .stage{margin-top:0}.sidebar-left{top:20px;gap:0}.sidebar-right{top:128px}.sidebar h1{font-size:21px;line-height:1.25;letter-spacing:-.3px}.selection-controls{display:flex;flex-direction:column;gap:12px;margin-top:42px}.sidebar .tag{margin-top:22px;line-height:1.5;font-size:12px}
 @media(max-width:1000px){.stage{margin-top:0}.selection-controls{margin-top:18px;gap:8px}.sidebar .tag{margin-top:10px}.sidebar h1{font-size:20px}}
+[hidden]{display:none!important}#back{align-self:flex-start;margin-top:8px}.cross-view{margin:18px 185px 0;min-height:650px}.cross-view h2{font-size:21px;margin:0 0 8px}.cross-view p{font-size:12px;line-height:1.5;margin:8px 0}.cross-mode .center-info{display:none}.cross-view svg{min-width:700px}.cross-view .cross-scroll{overflow-x:auto;width:100%}
+@media(max-width:1000px){.cross-view{margin:0;min-height:0}.cross-mode .chart{grid-row:2}}
 </style>
 <main>
  <div class="stage">
@@ -35,6 +37,7 @@ dialog{width:min(850px,calc(100% - 24px));max-height:88vh;border:1px solid #d4d8
   <label>Período <select id="mode"><option value="mensal">Mensal dessazonalizado</option><option value="12m">Acumulado em 12 meses</option></select></label>
   <div class="tabs" role="group" aria-label="Análise"><button class="active" data-type="parceiros" aria-pressed="true">Parceiros</button><button data-type="produtos" aria-pressed="false">Produtos</button></div>
   <div class="metric"><span>Exportações</span><strong id="exp"></strong></div>
+  <button id="back" hidden>← Voltar</button>
   </div>
  </aside>
  <aside class="sidebar sidebar-right" aria-label="Reprodução e mês">
@@ -48,7 +51,7 @@ dialog{width:min(850px,calc(100% - 24px));max-height:88vh;border:1px solid #d4d8
   <div class="metric"><span id="balance-label">Saldo</span><strong id="balance"></strong></div>
   <div class="metric period"><strong id="period"></strong><span id="coverage"></span></div>
  </div>
- <div class="chart"><svg id="chart" viewBox="-160 0 1600 825" role="group" aria-label="Sankey: clique nas barras para detalhar exportações, importações e saldo"><title id="svg-title"></title><g id="drawing"></g></svg></div>
+ <div class="chart"><svg id="chart" viewBox="-160 0 1600 825" role="group" aria-label="Sankey: clique nas barras para detalhar exportações, importações e saldo"><title id="svg-title"></title><g id="drawing"></g></svg><section id="cross-view" class="cross-view" aria-labelledby="cross-title" hidden><h2 id="cross-title" tabindex="-1"></h2><p id="cross-context"></p><div id="cross-content"></div></section></div>
  </div>
  <div class="timeline"><button id="prev" aria-label="Mês anterior">‹</button><input type="range" id="slider" min="0" value="0" aria-label="Linha do tempo mensal"><output id="time-current" class="time-current" for="slider"></output><button id="next" aria-label="Mês seguinte">›</button></div>
  <div class="limits"><span id="start"></span><span id="end"></span></div>
@@ -64,6 +67,7 @@ dialog{width:min(850px,calc(100% - 24px));max-height:88vh;border:1px solid #d4d8
 <script>
 'use strict';
 const DATA=__DADOS_SANKEY__;
+const CROSS=__CRUZADOS_SANKEY__;
 const $=id=>document.getElementById(id), NS='http://www.w3.org/2000/svg';
 const fmt=v=>v.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1});
 const pct=v=>v.toLocaleString('pt-BR',{maximumFractionDigits:1})+'%';
@@ -71,6 +75,7 @@ const months=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov',
 const date=s=>months[Number(s.slice(5))-1]+'/'+s.slice(0,4);
 const sum=a=>a.reduce((s,v)=>s+v,0);
 let country='brasil',mode='mensal',type='parceiros',index=0,playing=false,timer=null,raf=null,current=null,items=[];
+let crossSelection=null,crossTrigger=null;
 const dataset=()=>DATA[[country,type,mode].join('_')];
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function el(tag,attrs={},parent=$('drawing')){const e=document.createElementNS(NS,tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,v);parent.appendChild(e);return e}
@@ -78,12 +83,14 @@ function text(x,y,s,attrs={},parent){const e=el('text',{x,y,...attrs},parent);e.
 function wrap(s,max=29){const rows=[''];for(const word of s.split(' ')){let n=rows.length-1;if(rows[n]&&rows[n].length+word.length+1>max){rows.push(word)}else{rows[n]+=(rows[n]?' ':'')+word}}return rows}
 function build(){
  $('drawing').replaceChildren();items=[];
- text(320,35,'EXPORTAÇÕES',{'text-anchor':'end','font-size':16,'font-weight':700});
- text(960,35,'IMPORTAÇÕES',{'font-size':16,'font-weight':700});
+ for(const side of [0,1]){
+  const heading=text(side?960:320,35,side?'IMPORTAÇÕES':'EXPORTAÇÕES',{'text-anchor':side?'start':'end','font-size':16,'font-weight':700,class:'flow-heading',role:'button',tabindex:0,'aria-label':side?'Detalhar todas as importações':'Detalhar todas as exportações',style:'cursor:zoom-in'});
+  heading.onclick=()=>openCross(null,side);heading.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openCross(null,side)}};
+ }
  const d=dataset(),names=[...d.names,'Déficit comercial','Superávit comercial'],colors=[...d.colors,'#cd6252','#5c9478'];
  for(let side=0;side<2;side++) for(let i=0;i<names.length;i++){
   const group=el('g',{class:'category',role:'button',tabindex:0,'aria-label':'Detalhar '+names[i]},undefined),path=el('path',{fill:colors[i],'fill-opacity':.36,class:'band'},group),tip=el('title',{},group);
-  group.onclick=()=>openZoom(i);group.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openZoom(i)}};
+  group.onclick=()=>i<d.names.length?openCross(i,side):openZoom(i);group.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();group.onclick()}};
   const node=el('rect',{width:9,fill:colors[i]},group),center=el('rect',{width:5,fill:colors[i]},group);
   const label=el('text',{'text-anchor':side?'start':'end','font-size':13,fill:i>=d.names.length?colors[i]:'#515151','font-weight':i>=d.names.length?700:400},group);
   const rows=wrap(names[i]);rows.forEach((s,j)=>{const t=el('tspan',{x:side?982:298,dy:j?15:0},label);t.textContent=s});
@@ -142,12 +149,73 @@ function show(animate=false){
  $('exp').textContent=fmt(ex);$('imp').textContent=fmt(im);$('balance').textContent=fmt(Math.abs(bal));
  $('balance-label').textContent=bal>=0?'Superávit':'Déficit';$('balance').style.color=bal>=0?'#5c9478':'#cd6252';
  $('svg-title').textContent=`${d.label} - ${type} - ${date(f.date)} (${mode==='mensal'?'dessaz.':'12 meses'})`;
+ if(crossSelection){renderCrossView();return}
  const target=geometry(f);
  items.forEach((o,j)=>{const v=target[j].v;o.value.textContent=fmt(v);const total=o.side?im:ex;o.tip.textContent=`${o.name}\n${o.side?'Importações':'Exportações'} · ${date(f.date)}\n${d.currency} ${fmt(v)} bi${o.i<d.names.length?' · '+pct(total?v/total*100:0)+' do total':''}`});
  if(raf)cancelAnimationFrame(raf);
  if(animate&&!reduce&&current){const from=current,start=performance.now(),duration=Math.min(650,Number($('speed').value)*.72);function tick(now){const t=Math.min(1,(now-start)/duration),e=t*t*(3-2*t);paint(target.map((p,j)=>Object.fromEntries(Object.entries(p).map(([key,v])=>[key,from[j][key]+(v-from[j][key])*e]))));if(t<1)raf=requestAnimationFrame(tick);else raf=null}raf=requestAnimationFrame(tick)}else paint(target);
 }
 function pause(){playing=false;clearTimeout(timer);$('play').textContent='▶ Reproduzir'}
+function crossRows(side,i){
+ const d=dataset(),f=d.frames[index],base=CROSS[country];
+ if(!base)return {error:'O cruzamento Produto × País ainda não está disponível para '+d.label+'.'};
+ const fluxo=side?'imp':'exp',start=mode==='12m'?f.start:f.date;
+ const rows=base.rows.map(r=>Object.fromEntries(base.columns.map((c,j)=>[c,r[j]])));
+ const covered=new Set(rows.filter(r=>r.fluxo===fluxo).map(r=>r.date));
+ let cursor=start;while(cursor<=f.date){if(!covered.has(cursor))return {error:'O cruzamento Produto × País não cobre todo este período. Nenhum mês foi substituído. Cobertura disponível: '+date([...covered].sort()[0])+' a '+date([...covered].sort().at(-1))+'.'};const [y,m]=cursor.split('-').map(Number);cursor=m===12?(y+1)+'-01':y+'-'+String(m+1).padStart(2,'0')}
+ return {rows:rows.filter(r=>r.fluxo===fluxo&&r.date>=start&&r.date<=f.date&&(i===null||(type==='produtos'?r.produto===d.names[i]:r.bloco===d.names[i])))};
+}
+function openCross(i,side){
+ pause();if(raf){cancelAnimationFrame(raf);raf=null;show()}
+ crossTrigger=document.activeElement;crossSelection={i,side};
+ $('chart').setAttribute('hidden','');$('cross-view').hidden=false;$('back').hidden=false;
+ document.querySelector('.stage').classList.add('cross-mode');
+ renderCrossView();$('cross-title').focus({preventScroll:true});
+}
+function closeCross(restoreFocus=true){
+ if(!crossSelection)return;
+ pause();crossSelection=null;$('chart').removeAttribute('hidden');$('cross-view').hidden=true;$('back').hidden=true;
+ document.querySelector('.stage').classList.remove('cross-mode');show();
+ if(restoreFocus&&crossTrigger?.isConnected)crossTrigger.focus({preventScroll:true});
+}
+$('back').onclick=()=>closeCross();
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&crossSelection&&!$('zoom').open){e.preventDefault();closeCross()}});
+function renderCrossView(){
+ const {i,side}=crossSelection;
+ const d=dataset(),f=d.frames[index],flow=side?'Importações':'Exportações',selection=i===null?'Produto × País':d.names[i];
+ $('cross-title').textContent=flow+' · '+selection;
+ $('cross-context').textContent=d.label+' · '+(mode==='12m'?date(f.start)+' a ':'')+date(f.date)+' · '+d.currency+' bilhões · Valores originais'+(mode==='mensal'?' (cruzamento sem ajuste sazonal)':'');
+ const content=$('cross-content');content.replaceChildren();
+ const result=crossRows(side,i);
+ if(result.error){const p=document.createElement('p');p.textContent=result.error;content.appendChild(p)}else{
+  renderCross(result.rows,side,i);
+  const p=document.createElement('p');p.textContent='Fonte: MDIC / Comex Stat. Países individualizados; após os 12 maiores do período, os demais são somados em “Outros países”. '+(mode==='mensal'?'Os valores originais deste detalhe podem diferir das barras dessazonalizadas.':'');content.appendChild(p);
+ }
+}
+function renderCross(rows,side,i){
+ const content=$('cross-content'),total=sum(rows.map(r=>r.valor));
+ const summary=document.createElement('p');summary.textContent='Total: '+dataset().currency+' '+fmt(total)+' bi';content.appendChild(summary);
+ if(total<=0){summary.textContent='Sem comércio nesta seleção.';return}
+ const ranks=new Map();for(const r of rows)ranks.set(r.pais,(ranks.get(r.pais)||0)+r.valor);
+ const top=new Set([...ranks].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).slice(0,12).map(r=>r[0]));
+ const links=new Map();for(const r of rows){const partner=top.has(r.pais)?r.pais:'Outros países',key=JSON.stringify([r.produto,partner]);links.set(key,(links.get(key)||0)+r.valor)}
+ const values=[...links].map(([k,v])=>{const [product,partner]=JSON.parse(k);return {left:side?partner:product,right:side?product:partner,product,value:v}}).filter(r=>r.value>0);
+ const totals=key=>{const m=new Map();for(const r of values)m.set(r[key],(m.get(r[key])||0)+r.value);return [...m].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))};
+ const left=totals('left'),right=totals('right'),gap=12,height=Math.max(440,Math.max(left.length,right.length)*60);
+ const used=(entries,k)=>sum(entries.map(([,v])=>Math.max(46,v*k)))+gap*(entries.length-1);
+ let low=0,high=height/total;for(let j=0;j<45;j++){const k=(low+high)/2;if(Math.max(used(left,k),used(right,k))>height)high=k;else low=k}const scale=low;
+ const holder=document.createElement('div');holder.className='cross-scroll';content.appendChild(holder);
+ const svg=el('svg',{id:'cross-chart',viewBox:`0 0 1000 ${height+100}`,role:'img','aria-label':(side?'País de origem → Produto':'Produto → País de destino')+' · '+date(dataset().frames[index].date),'data-flow':side?'imp':'exp','data-month':dataset().frames[index].date,style:'min-width:700px'},holder);
+ text(330,24,side?'PAÍS DE ORIGEM':'PRODUTO',{'text-anchor':'end','font-size':14,'font-weight':700},svg);text(670,24,side?'PRODUTO':'PAÍS DE DESTINO',{'font-size':14,'font-weight':700},svg);
+ function slots(entries){let y=50+(height-used(entries,scale))/2;return new Map(entries.map(([name,v])=>{const h=v*scale,slot=Math.max(46,h),node={y:y+(slot-h)/2,h,offset:0,value:v};y+=slot+gap;return [name,node]}))}
+ const ls=slots(left),rs=slots(right),colors=new Map(DATA[country+'_produtos_'+mode].names.map((n,j)=>[n,DATA[country+'_produtos_'+mode].colors[j]]));
+ for(const r of values){const l=ls.get(r.left),q=rs.get(r.right),a=l.y+l.offset,b=q.y+q.offset,h=r.value*scale;l.offset+=h;q.offset+=h;
+  const path=el('path',{d:`M340,${a} C500,${a} 500,${b} 660,${b} L660,${b+h} C500,${b+h} 500,${a+h} 340,${a+h} Z`,fill:colors.get(r.product)||'#4a7fb5','fill-opacity':.42,class:'band'},svg);
+  el('title',{},path).textContent=r.left+' → '+r.right+' · '+fmt(r.value)+' bi · '+pct(r.value/total*100);
+ }
+ for(const [entries,slots,x,anchor,labelX] of [[left,ls,330,'end',320],[right,rs,660,'start',680]])for(const [name,v] of entries){const node=slots.get(name);el('rect',{x,y:node.y,width:10,height:node.h,fill:colors.get(name)||'#4a7fb5'},svg);const lines=wrap(name,32),label=text(labelX,node.y+node.h/2-(lines.length-1)*7-4,'',{'text-anchor':anchor,'font-size':12},svg);for(const [j,line] of lines.entries()){const t=el('tspan',{x:labelX,dy:j?14:0},label);t.textContent=line}text(labelX,node.y+node.h/2+(lines.length-1)*7+13,fmt(v)+' · '+pct(v/total*100),{'text-anchor':anchor,'font-size':11},svg)}
+ svg.dataset.total=total;
+}
 function openZoom(i){
  pause();if(raf){cancelAnimationFrame(raf);raf=null;show()}
  const d=dataset(),f=d.frames[index],rows=d.names.map((name,j)=>({name,exp:f.exp[j],imp:f.imp[j],balance:f.exp[j]-f.imp[j]}));
@@ -183,6 +251,7 @@ $('zoom-close').onclick=()=>$('zoom').close();
 $('zoom').onclick=e=>{if(e.target===$('zoom')){const r=$('zoom').getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)$('zoom').close()}};
 function schedule(){clearTimeout(timer);timer=setTimeout(()=>{if(!playing)return;if(index===dataset().frames.length-1){if(!$('loop').checked){pause();return}index=0}else index++;show(true);schedule()},Number($('speed').value))}
 function selectType(t,first=false){
+ closeCross(false);
  pause();if(raf){cancelAnimationFrame(raf);raf=null}const previous=dataset().frames[index]?.date;
  type=t;country=$('country').value;mode=$('mode').value;const d=dataset();
  index=first?d.frames.length-1:d.frames.findIndex(f=>f.date===previous);
@@ -199,8 +268,8 @@ function selectType(t,first=false){
  document.addEventListener('visibilitychange',()=>{if(document.hidden)pause()});
  $('country').onchange=()=>selectType(type);$('mode').onchange=()=>selectType(type);
  function download(content,mime,ext){const a=document.createElement('a'),url=URL.createObjectURL(new Blob([content],{type:mime}));a.href=url;a.download=[country,type,mode,dataset().frames[index].date].join('_')+'.'+ext;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
- $('download-svg').onclick=()=>{pause();if(raf)cancelAnimationFrame(raf);show();const svg=$('chart').cloneNode(true);svg.setAttribute('xmlns',NS);const style=document.createElementNS(NS,'style');style.textContent="text{font-family:'Segoe UI',Arial,sans-serif;fill:#515151}";svg.prepend(style);download(new XMLSerializer().serializeToString(svg),'image/svg+xml;charset=utf-8','svg')};
- $('download-csv').onclick=()=>{const d=dataset(),quote=v=>'"'+String(v).replaceAll('"','""')+'"';const rows=[['pais','analise','periodo','mes','inicio','moeda','categoria','exportacoes_bi','importacoes_bi'],...d.frames.flatMap(f=>d.names.map((n,i)=>[d.label,type,mode,f.date,f.start,d.currency,n,f.exp[i],f.imp[i]]))];download('\ufeff'+rows.map(r=>r.map(quote).join(';')).join('\r\n'),'text/csv;charset=utf-8','csv')};
+ $('download-svg').onclick=()=>{pause();if(raf)cancelAnimationFrame(raf);show();const active=crossSelection?$('cross-chart'):$('chart');if(!active)return;const svg=active.cloneNode(true);svg.setAttribute('xmlns',NS);const style=document.createElementNS(NS,'style');style.textContent="text{font-family:'Segoe UI',Arial,sans-serif;fill:#515151}";svg.prepend(style);download(new XMLSerializer().serializeToString(svg),'image/svg+xml;charset=utf-8','svg')};
+ $('download-csv').onclick=()=>{const d=dataset(),quote=v=>'"'+String(v).replaceAll('"','""')+'"';let rows;if(crossSelection){const result=crossRows(crossSelection.side,crossSelection.i);if(result.error)return;rows=[['mes','fluxo','produto','pais','bloco','valor_original_bi'],...result.rows.map(r=>[r.date,r.fluxo,r.produto,r.pais,r.bloco,r.valor])]}else rows=[['pais','analise','periodo','mes','inicio','moeda','categoria','exportacoes_bi','importacoes_bi'],...d.frames.flatMap(f=>d.names.map((n,i)=>[d.label,type,mode,f.date,f.start,d.currency,n,f.exp[i],f.imp[i]]))];download('\ufeff'+rows.map(r=>r.map(quote).join(';')).join('\r\n'),'text/csv;charset=utf-8','csv')};
  $('share').onclick=async()=>{try{await navigator.clipboard.writeText(location.href);$('status').textContent='Link copiado.'}catch{$('status').textContent='Copie o endereço da página para compartilhar esta seleção.'}};
  const initial=new URLSearchParams(location.hash.slice(1));
  if(['brasil','eua','ue','china'].includes(initial.get('pais')))$('country').value=initial.get('pais');

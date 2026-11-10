@@ -19,7 +19,7 @@ def main():
         shutil.copy2(ROOT / rel, p)
     for nome in ['balanca_sankey_animado.py', 'balanca_sankey_animado.html', 'balanca_sankey.py',
                  'comum.py', 'estilo_ps.py', 'sankey.py', 'verificar_sankey_html.py',
-                 'preparar_publicacao_sankey.py']:
+                 'preparar_publicacao_sankey.py', 'balanca_sankey_cruzado.py']:
         copiar('codigos/' + nome)
     for pais in ['brasil', 'eua', 'ue', 'china']:
         for tipo in ['parceiros', 'produtos']:
@@ -27,6 +27,8 @@ def main():
                 copiar('dados/balanca_sankey/' + pais + '_' + tipo + sufixo + '.csv')
     for nome in ['valores_graficos.csv', 'README.md']:
         copiar('dados/balanca_sankey/' + nome)
+    for p in (ROOT / 'dados/balanca_sankey').glob('*_produto_pais.json'):
+        copiar(p.relative_to(ROOT))
     original = json.loads((ROOT / 'dados/balanca_sankey/fontes.json').read_text(encoding='utf-8'))
     manifesto = dict(cobertura=original['cobertura'], bases=[dict(arquivo=Path(x['arquivo']).name,
                     sha256=x['sha256']) for x in original['bases']])

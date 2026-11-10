@@ -106,9 +106,12 @@ def preparar():
 
 
 def main():
+    from balanca_sankey_cruzado import carregar
     dados, validacao = preparar()
+    cruzados = carregar()
     template = Path(__file__).with_name('balanca_sankey_animado.html').read_text(encoding='utf-8')
     conteudo = template.replace('__DADOS_SANKEY__', json.dumps(dados, ensure_ascii=False, allow_nan=False))
+    conteudo = conteudo.replace('__CRUZADOS_SANKEY__', json.dumps(cruzados, ensure_ascii=False, allow_nan=False))
     SAIDA.mkdir(parents=True, exist_ok=True)
     (SAIDA / 'brasil_sankey_mensal.html').write_text(conteudo, encoding='utf-8')
     (SAIDA / 'index.html').write_text(conteudo, encoding='utf-8')

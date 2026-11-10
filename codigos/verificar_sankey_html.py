@@ -49,8 +49,56 @@ def main():
         page.screenshot(path=str(OUTPUT / 'preview_desktop.png'), full_page=True)
         page.locator('#drawing .category').first.focus()
         page.keyboard.press('Enter')
-        assert page.locator('#zoom-content tbody tr').count() == 1
-        page.click('#zoom-close')
+        assert page.locator('#cross-chart').count() == 1
+        assert not page.locator('#zoom').is_visible()
+        assert not page.locator('#chart').is_visible()
+        page.click('#back')
+        assert page.locator('#chart').is_visible()
+        # Produto/fluxo/mês devem ser preservados; origem à esquerda, destino à direita.
+        page.click('[data-type="produtos"]')
+        page.select_option('#month', page.locator('#slider').get_attribute('max'))
+        fuel = page.evaluate('dataset().names.indexOf("Combustíveis")')
+        for side in [0, 1]:
+            offset = page.evaluate('dataset().names.length+2') * side + fuel
+            page.locator('#drawing .category').nth(offset).locator('rect').first.click()
+            assert page.locator('#cross-chart').get_attribute('data-flow') == ('imp' if side else 'exp')
+            assert page.locator('#cross-chart').get_attribute('data-month') == page.evaluate('dataset().frames[index].date')
+            assert page.locator('#cross-chart').get_attribute('aria-label').startswith('País de origem' if side else 'Produto')
+            assert page.evaluate('(s)=>Math.abs(Number(document.querySelector("#cross-chart").dataset.total)-sum(crossRows(s,dataset().names.indexOf("Combustíveis")).rows.map(r=>r.valor)))', side) < 1e-9
+            if side:
+                page.screenshot(path=str(OUTPUT / 'preview_combustiveis_importacoes.png'), full_page=True)
+            assert not page.locator('#chart').is_visible()
+            assert not page.locator('#zoom').is_visible()
+            before = page.locator('#month').input_value()
+            page.click('#prev')
+            assert page.locator('#cross-chart').get_attribute('data-month') == page.evaluate('dataset().frames[index].date')
+            page.click('#next')
+            assert page.locator('#month').input_value() == before
+            page.click('#back')
+            assert page.locator('#month').input_value() == before
+            assert page.locator('#chart').is_visible()
+        for side in [0, 1]:
+            page.locator('.flow-heading').nth(side).focus()
+            page.keyboard.press('Enter')
+            assert page.locator('#cross-chart').count() == 1
+            assert page.evaluate('(s)=>Math.abs(Number(document.querySelector("#cross-chart").dataset.total)-sum(crossRows(s,null).rows.map(r=>r.valor)))', side) < 1e-9
+            page.keyboard.press('Escape')
+        page.select_option('#mode', '12m')
+        page.evaluate('openCross(null,1)')
+        assert 'não cobre todo este período' in page.locator('#cross-content').inner_text()
+        assert page.locator('#cross-chart').count() == 0
+        page.keyboard.press('Escape')
+        page.select_option('#country', 'eua')
+        page.evaluate('openCross(null,0)')
+        assert 'ainda não está disponível' in page.locator('#cross-content').inner_text()
+        page.keyboard.press('Escape')
+        page.select_option('#country', 'brasil')
+        page.select_option('#mode', 'mensal')
+        page.select_option('#month', '0')
+        page.evaluate('openCross(null,0)')
+        assert 'não cobre todo este período' in page.locator('#cross-content').inner_text()
+        page.keyboard.press('Escape')
+        page.select_option('#month', page.locator('#slider').get_attribute('max'))
         page.locator('#drawing .category[aria-hidden="false"][aria-label$="comercial"]').locator('rect').first.click()
         page.screenshot(path=str(OUTPUT / 'preview_zoom.png'), full_page=True)
         page.click('#zoom-close')
@@ -82,13 +130,16 @@ def main():
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
         page.locator('#drawing .category').first.locator('rect').first.click()
         page.screenshot(path=str(OUTPUT / 'preview_zoom_mobile.png'), full_page=True)
-        assert page.evaluate('document.querySelector("#zoom").scrollWidth <= document.querySelector("#zoom").clientWidth')
-        page.click('#zoom-close')
+        assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+        page.click('#back')
         assert not errors, errors
         page.close()
         (OUTPUT / 'validacao_navegador.json').write_text(json.dumps({'analises': checked, 'erros_js': errors,
              'exportacoes_svg_csv': True, 'link_preservado': True, 'reproducao': True, 'mobile': True,
              'zoom_saldo_16_analises': True, 'zoom_categoria_teclado': True, 'zoom_mobile': True,
+             'cruzamento_fluxo_mes_produto': True, 'titulos_cruzamento_teclado': True,
+             'cobertura_cruzamento_estrita': True,
+             'detalhe_substitui_grafico': True, 'voltar_preserva_selecao': True,
              'velocidades_4x_8x': True, 'periodo_acima_bolinha': True}, indent=2), encoding='utf-8')
         browser.close()
         print('16 análises: navegador, moeda, extremos, exportações, link, reprodução e mobile OK')
