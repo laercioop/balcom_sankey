@@ -21,5 +21,8 @@
   "exportacoes_svg_csv": true,
   "link_preservado": true,
   "reproducao": true,
-  "mobile": true
+  "mobile": true,
+  "zoom_saldo_16_analises": true,
+  "zoom_categoria_teclado": true,
+  "zoom_mobile": true
 }

@@ -5,22 +5,23 @@
 <title>Balança comercial · Sankeys</title>
 <style>
 :root{color-scheme:light;font-family:'Segoe UI',Arial,sans-serif;color:#515151;background:#fff}
-*{box-sizing:border-box}body{margin:0}main{max-width:1380px;margin:auto;padding:28px 36px 20px}
+*{box-sizing:border-box}body{margin:0}main{max-width:1380px;margin:auto;padding:18px 36px 14px}
 header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
 h1{font-size:27px;margin:0;font-weight:700;letter-spacing:-.5px}.tag{font-size:13px;color:#808080}
 button,select,input{font:inherit}button,select{background:white;border:1px solid #d4d8dc;border-radius:5px;padding:8px 13px;color:#515151;cursor:pointer}
 button:hover{background:#f0f5fa}button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #4a7fb5;outline-offset:3px}
 button.active,button.primary{background:#4a7fb5;color:white;border-color:#4a7fb5}
-.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:22px 0 16px}.tabs{display:flex;gap:6px;margin-right:auto}
-.toolbar label{font-size:13px;display:flex;align-items:center;gap:8px}.metrics{display:flex;gap:50px;border-top:1px solid #e8e8e8;padding-top:16px}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0 10px}.tabs{display:flex;gap:6px;margin-right:auto}
+.toolbar label{font-size:13px;display:flex;align-items:center;gap:8px}.metrics{display:flex;gap:50px;border-top:1px solid #e8e8e8;padding-top:9px}
 .metric span{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:#808080}.metric strong{font-size:25px;font-weight:600;font-variant-numeric:tabular-nums}
 .period{margin-left:auto;text-align:right}.period strong{font-size:28px}.period span{text-transform:none;letter-spacing:0}
 .chart{width:100%;overflow-x:auto}svg{display:block;width:100%;min-width:820px;height:auto}svg text{font-family:'Segoe UI',Arial,sans-serif;fill:#515151}
-.band{cursor:help;transition:fill-opacity .12s}.band:hover{fill-opacity:.85}
+.band{transition:fill-opacity .12s}.band:hover{fill-opacity:.85}.category{cursor:zoom-in}.category:focus-visible{outline:none}.category:focus-visible .band{fill-opacity:.85;stroke:#515151;stroke-width:2}
 .timeline{display:flex;align-items:center;gap:10px;margin-top:2px}.timeline input{flex:1;min-width:80px;accent-color:#4a7fb5;cursor:pointer}.timeline button{min-width:42px}
 .limits{display:flex;justify-content:space-between;margin:6px 54px 0;font-size:12px;color:#808080}
-.below{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-top:16px;font-size:12px;color:#808080}.below label{display:flex;align-items:center;gap:5px;cursor:pointer}
-details{margin-top:18px;border-top:1px solid #e8e8e8;padding-top:12px;font-size:12px;line-height:1.6;color:#808080}summary{cursor:pointer;color:#515151}details p{max-width:950px;margin:8px 0}
+.below{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-top:9px;font-size:12px;color:#808080}.below label{display:flex;align-items:center;gap:5px;cursor:pointer}
+details{margin-top:10px;border-top:1px solid #e8e8e8;padding-top:8px;font-size:12px;line-height:1.6;color:#808080}summary{cursor:pointer;color:#515151}details p{max-width:950px;margin:8px 0}
+dialog{width:min(850px,calc(100% - 24px));max-height:88vh;border:1px solid #d4d8dc;border-radius:10px;padding:20px;color:#515151;overflow:auto}dialog::backdrop{background:#172b4259}dialog header{gap:10px}dialog h2{font-size:21px;margin:0}dialog p{font-size:13px;line-height:1.5;margin:10px 0}.zoom-summary{display:flex;gap:22px;flex-wrap:wrap;margin:12px 0}.zoom-summary strong{display:block;font-size:21px}.zoom-summary span{font-size:12px;color:#808080}.zoom-table{width:100%;border-collapse:collapse;font-size:13px}.zoom-table th,.zoom-table td{padding:8px 5px;border-bottom:1px solid #eee;text-align:right;font-variant-numeric:tabular-nums}.zoom-table th:first-child,.zoom-table td:first-child{text-align:left;width:40%}.zoom-table th{font-size:11px;color:#808080}.zoom-bar{height:6px;margin-top:5px;border-radius:2px}.negative{color:#b94e40}.positive{color:#397951}dialog h3{font-size:15px;margin:16px 0 5px}
 @media(max-width:700px){main{padding:18px 14px}h1{font-size:23px}.metrics{gap:20px;flex-wrap:wrap}.metric strong{font-size:21px}.period{margin-left:0}.toolbar{gap:7px}.tabs{width:100%}.limits{margin-left:52px;margin-right:52px}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
 </style>
@@ -40,7 +41,7 @@ details{margin-top:18px;border-top:1px solid #e8e8e8;padding-top:12px;font-size:
   <div class="metric"><span id="balance-label">Saldo</span><strong id="balance"></strong></div>
   <div class="metric period"><strong id="period"></strong><span id="coverage"></span></div>
  </div>
- <div class="chart"><svg id="chart" viewBox="0 0 1280 790" role="img" aria-label="Sankey mensal: exportações à esquerda, importações à direita e saldo para fechar os fluxos"><title id="svg-title"></title><g id="drawing"></g></svg></div>
+ <div class="chart"><svg id="chart" viewBox="0 0 1280 690" role="group" aria-label="Sankey: clique nas barras para detalhar exportações, importações e saldo"><title id="svg-title"></title><g id="drawing"></g></svg></div>
  <div class="timeline"><button id="prev" aria-label="Mês anterior">‹</button><input type="range" id="slider" min="0" value="0" aria-label="Linha do tempo mensal"><button id="next" aria-label="Mês seguinte">›</button></div>
  <div class="limits"><span id="start"></span><span id="end"></span></div>
  <div class="below"><label><input type="checkbox" id="fixed" checked> Escala fixa entre os meses</label><label><input type="checkbox" id="loop" checked> Repetir animação</label><span id="status">Passe o mouse nas faixas para ver valores e participações.</span></div>
@@ -51,6 +52,7 @@ details{margin-top:18px;border-top:1px solid #e8e8e8;padding-top:12px;font-size:
   <p>Com escala fixa, a mesma espessura representa o mesmo valor em todos os meses da análise selecionada. As transições interpolam a geometria entre duas observações; os rótulos e valores correspondem sempre ao mês selecionado. Desative a escala fixa para ampliar cada mês. Os dados estão incorporados neste arquivo; não é necessária conexão com a internet.</p>
  </details>
 </main>
+<dialog id="zoom" aria-labelledby="zoom-title"><header><h2 id="zoom-title"></h2><button id="zoom-close" aria-label="Fechar detalhamento">✕ Fechar</button></header><p id="zoom-context"></p><div id="zoom-content"></div></dialog>
 <script>
 'use strict';
 const DATA=__DADOS_SANKEY__;
@@ -73,19 +75,20 @@ function build(){
  text(640,35,dataset().currency+' bi',{'text-anchor':'middle','font-size':13,fill:'#808080'});
  const d=dataset(),names=[...d.names,'Déficit comercial','Superávit comercial'],colors=[...d.colors,'#cd6252','#5c9478'];
  for(let side=0;side<2;side++) for(let i=0;i<names.length;i++){
-  const group=el('g'),path=el('path',{fill:colors[i],'fill-opacity':.36,class:'band'},group),tip=el('title',{},path);
+  const group=el('g',{class:'category',role:'button',tabindex:0,'aria-label':'Detalhar '+names[i]},undefined),path=el('path',{fill:colors[i],'fill-opacity':.36,class:'band'},group),tip=el('title',{},group);
+  group.onclick=()=>openZoom(i);group.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openZoom(i)}};
   const node=el('rect',{width:9,fill:colors[i]},group),center=el('rect',{width:5,fill:colors[i]},group);
   const label=el('text',{'text-anchor':side?'start':'end','font-size':13,fill:i>=d.names.length?colors[i]:'#515151','font-weight':i>=d.names.length?700:400},group);
   const rows=wrap(names[i]);rows.forEach((s,j)=>{const t=el('tspan',{x:side?982:298,dy:j?15:0},label);t.textContent=s});
   const value=el('text',{'text-anchor':side?'end':'start','font-size':13,'font-weight':600,stroke:'white','stroke-width':4,'paint-order':'stroke'},group);
   items.push({side,i,group,path,node,center,label,value,tip,name:names[i],rows:rows.length});
  }
- el('line',{x1:640,x2:640,y1:65,y2:746,stroke:'white','stroke-width':1});
+ el('line',{x1:640,x2:640,y1:50,y2:660,stroke:'white','stroke-width':1});
 }
 function geometry(frame){
  const d=dataset(),n=d.names.length,ex=sum(frame.exp),im=sum(frame.imp),balance=ex-im;
  const left=[...frame.exp,Math.max(-balance,0),0],right=[...frame.imp,0,Math.max(balance,0)];
- const total=Math.max(ex,im),gap=5,min=27,available=670;
+ const total=Math.max(ex,im),gap=4,min=27,available=610;
  // Fixed slots accommodate each category's historical maximum, including balance.
  // Thus labels remain stationary and a billion has the same width in every month.
  const maxima=[left.slice(),right.slice()];
@@ -100,7 +103,7 @@ function geometry(frame){
  const result=[];
  [left,right].forEach((values,side)=>{
   const slots=maxima[side].map(v=>Math.max(v*scale,min));
-  const h=sum(slots)+gap*(slots.length-1);let y=65+(available-h)/2,c=65+(available-total*scale)/2;
+  const h=sum(slots)+gap*(slots.length-1);let y=50+(available-h)/2,c=50+(available-total*scale)/2;
   values.forEach((v,i)=>{const thick=v*scale,top=y+(slots[i]-thick)/2;result.push({side,i,v,top,bottom:top+thick,ctop:c,cbottom:c+thick,mid:y+slots[i]/2});c+=thick;y+=slots[i]+gap});
  });
  return result;
@@ -115,6 +118,7 @@ function paint(g){
   o.center.setAttribute('x',left?635:640);o.center.setAttribute('y',p.ctop);o.center.setAttribute('height',Math.max(0,p.cbottom-p.ctop));
   o.label.setAttribute('y',p.mid-(o.rows-1)*7.5+4);o.value.setAttribute('x',left?342:938);o.value.setAttribute('y',p.mid+4);
   o.group.setAttribute('opacity',o.i>=dataset().names.length&&p.v<1e-8?0:1);
+  const hidden=o.i>=dataset().names.length&&p.v<1e-8;o.group.setAttribute('tabindex',hidden?-1:0);o.group.setAttribute('aria-hidden',String(hidden));o.group.style.pointerEvents=hidden?'none':'';
  });current=g;
 }
 function show(animate=false){
@@ -134,6 +138,39 @@ function show(animate=false){
  if(animate&&!reduce&&current){const from=current,start=performance.now(),duration=Math.min(650,Number($('speed').value)*.72);function tick(now){const t=Math.min(1,(now-start)/duration),e=t*t*(3-2*t);paint(target.map((p,j)=>Object.fromEntries(Object.entries(p).map(([key,v])=>[key,from[j][key]+(v-from[j][key])*e]))));if(t<1)raf=requestAnimationFrame(tick);else raf=null}raf=requestAnimationFrame(tick)}else paint(target);
 }
 function pause(){playing=false;clearTimeout(timer);$('play').textContent='▶ Reproduzir'}
+function openZoom(i){
+ pause();if(raf){cancelAnimationFrame(raf);raf=null;show()}
+ const d=dataset(),f=d.frames[index],rows=d.names.map((name,j)=>({name,exp:f.exp[j],imp:f.imp[j],balance:f.exp[j]-f.imp[j]}));
+ const isBalance=i>=d.names.length,deficit=i===d.names.length;
+ const chosen=isBalance?rows:[rows[i]],ex=sum(chosen.map(r=>r.exp)),im=sum(chosen.map(r=>r.imp)),net=ex-im;
+ $('zoom-title').textContent=isBalance?(deficit?'De onde vem o déficit?':'De onde vem o superávit?'):d.names[i];
+ $('zoom-context').textContent=d.label+' · '+date(f.date)+' · '+(mode==='12m'?'Acumulado em 12 meses':'Mensal dessazonalizado')+' · '+d.currency+' bilhões';
+ const content=$('zoom-content');content.replaceChildren();
+ function html(tag,value,parent=content,cls=''){const e=document.createElement(tag);if(value!==null)e.textContent=value;if(cls)e.className=cls;parent.appendChild(e);return e}
+ const summary=html('div',null,content,'zoom-summary');
+ for(const [label,value] of [['Exportações',ex],['Importações',im],['Saldo',net]]){const box=html('div',null,summary);html('span',label,box);html('strong',fmt(value),box,label==='Saldo'?(value<0?'negative':'positive'):'')}
+ function table(title,values){
+  html('h3',title);if(!values.length){html('p','Nenhuma categoria neste grupo no período selecionado.');return}
+  const table=html('table',null,content,'zoom-table'),head=html('tr',null,html('thead',null,table));
+  for(const label of [type==='parceiros'?'País / bloco':'Produto','Exportações','Importações','Saldo'])html('th',label,head);
+  const body=html('tbody',null,table),max=Math.max(...values.map(r=>Math.abs(r.balance)),1e-12);
+  for(const r of values){const tr=html('tr',null,body),name=html('td',r.name,tr);const bar=html('div',null,name,'zoom-bar');bar.style.width=(100*Math.abs(r.balance)/max)+'%';bar.style.background=r.balance<0?'#cd6252':'#5c9478';html('td',fmt(r.exp),tr);html('td',fmt(r.imp),tr);html('td',(r.balance>0?'+':'')+fmt(r.balance),tr,r.balance<0?'negative':'positive')}
+ }
+ if(isBalance){
+  const negatives=rows.filter(r=>r.balance<0).sort((a,b)=>a.balance-b.balance),positives=rows.filter(r=>r.balance>0).sort((a,b)=>b.balance-a.balance);
+  const grossDeficit=-sum(negatives.map(r=>r.balance)),grossSurplus=sum(positives.map(r=>r.balance));
+  html('p','Déficits somados: '+d.currency+' '+fmt(grossDeficit)+' bi. Superávits somados: '+d.currency+' '+fmt(grossSurplus)+' bi. O saldo líquido é a diferença entre os dois.');
+  table(deficit?'Parceiros ou produtos com déficit':'Parceiros ou produtos com superávit',deficit?negatives:positives);
+  table(deficit?'Superávits que compensam parte do déficit':'Déficits que reduzem o superávit',deficit?positives:negatives);
+ }else{
+  table('Comércio da categoria selecionada',chosen);
+  html('p','Participação nas exportações: '+pct(ex/sum(f.exp)*100)+'. Participação nas importações: '+pct(im/sum(f.imp)*100)+'.');
+ }
+ if(type==='parceiros')html('p','Blocos e “Demais parceiros” aparecem agregados conforme a base disponível.');
+ if(!$('zoom').open)$('zoom').showModal();
+}
+$('zoom-close').onclick=()=>$('zoom').close();
+$('zoom').onclick=e=>{if(e.target===$('zoom')){const r=$('zoom').getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)$('zoom').close()}};
 function schedule(){clearTimeout(timer);timer=setTimeout(()=>{if(!playing)return;if(index===dataset().frames.length-1){if(!$('loop').checked){pause();return}index=0}else index++;show(true);schedule()},Number($('speed').value))}
 function selectType(t,first=false){
  pause();if(raf){cancelAnimationFrame(raf);raf=null}const previous=dataset().frames[index]?.date;
@@ -142,7 +179,7 @@ function selectType(t,first=false){
  if(index<0)index=d.frames.length-1;current=null;
  $('month').replaceChildren(...d.frames.map((f,i)=>new Option(date(f.date),i)));$('slider').max=d.frames.length-1;
  $('start').textContent=date(d.frames[0].date);$('end').textContent=date(d.frames.at(-1).date);
- $('status').textContent='Fonte: '+d.source+'. Passe o mouse nas faixas para ver valores e participações.';
+ $('status').textContent='Fonte: '+d.source+'. Clique nas barras para detalhar países, produtos e saldo.';
  document.querySelectorAll('[data-type]').forEach(b=>{const on=b.dataset.type===type;b.classList.toggle('active',on);b.setAttribute('aria-pressed',on)});build();show();}
  $('play').onclick=()=>{if(playing)pause();else{playing=true;$('play').textContent='Ⅱ Pausar';if(index===dataset().frames.length-1){index=0;show()}schedule()}};
  $('slider').oninput=()=>{pause();index=Number($('slider').value);show()};$('month').onchange=()=>{pause();index=Number($('month').value);show(true)};

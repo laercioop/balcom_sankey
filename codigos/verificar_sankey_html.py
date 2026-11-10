@@ -28,11 +28,30 @@ def main():
                         assert page.evaluate("document.querySelectorAll('path[d*=Infinity]').length") == 0
                         assert page.evaluate("(()=>{const g=geometry(dataset().frames[index]);return Math.abs(sum(g.filter(p=>p.side===0).map(p=>p.v))-sum(g.filter(p=>p.side===1).map(p=>p.v)))})()") < 1e-8
                     assert ('€' if country == 'ue' else 'US$') in page.locator('#unit').inner_text()
+                    # Clique real no saldo: o detalhamento precisa reconciliar os
+                    # déficits e superávits de todas as categorias com o líquido.
+                    balance = page.locator('#drawing .category[aria-hidden="false"][aria-label$="comercial"]')
+                    balance.locator('rect').first.click()
+                    assert page.locator('#zoom').is_visible()
+                    assert page.locator('#zoom-content tbody tr').count() == page.evaluate('dataset().frames[index].exp.filter((v,i)=>v!==dataset().frames[index].imp[i]).length'), (country, mode, analysis, page.locator('#zoom-title').inner_text(), page.locator('#zoom-content').inner_text())
+                    totals = page.locator('.zoom-summary strong').all_text_contents()
+                    assert totals[0] == page.locator('#exp').inner_text()
+                    assert totals[1] == page.locator('#imp').inner_text()
+                    assert totals[2].replace('-', '') == page.locator('#balance').inner_text()
+                    page.keyboard.press('Escape')
+                    assert not page.locator('#zoom').is_visible()
                     checked.append(country + '_' + analysis + '_' + mode)
         page.select_option('#country', 'brasil')
         page.select_option('#mode', 'mensal')
         page.click('[data-type="parceiros"]')
         page.screenshot(path=str(OUTPUT / 'preview_desktop.png'), full_page=True)
+        page.locator('#drawing .category').first.focus()
+        page.keyboard.press('Enter')
+        assert page.locator('#zoom-content tbody tr').count() == 1
+        page.click('#zoom-close')
+        page.locator('#drawing .category[aria-hidden="false"][aria-label$="comercial"]').locator('rect').first.click()
+        page.screenshot(path=str(OUTPUT / 'preview_zoom.png'), full_page=True)
+        page.click('#zoom-close')
         with page.expect_download() as d:
             page.click('#download-svg')
         assert d.value.suggested_filename.endswith('.svg')
@@ -51,10 +70,15 @@ def main():
         page.set_viewport_size({'width': 390, 'height': 844})
         page.screenshot(path=str(OUTPUT / 'preview_mobile.png'), full_page=True)
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+        page.locator('#drawing .category').first.locator('rect').first.click()
+        page.screenshot(path=str(OUTPUT / 'preview_zoom_mobile.png'), full_page=True)
+        assert page.evaluate('document.querySelector("#zoom").scrollWidth <= document.querySelector("#zoom").clientWidth')
+        page.click('#zoom-close')
         assert not errors, errors
         page.close()
         (OUTPUT / 'validacao_navegador.json').write_text(json.dumps({'analises': checked, 'erros_js': errors,
-             'exportacoes_svg_csv': True, 'link_preservado': True, 'reproducao': True, 'mobile': True}, indent=2), encoding='utf-8')
+             'exportacoes_svg_csv': True, 'link_preservado': True, 'reproducao': True, 'mobile': True,
+             'zoom_saldo_16_analises': True, 'zoom_categoria_teclado': True, 'zoom_mobile': True}, indent=2), encoding='utf-8')
         browser.close()
         print('16 análises: navegador, moeda, extremos, exportações, link, reprodução e mobile OK')
 
