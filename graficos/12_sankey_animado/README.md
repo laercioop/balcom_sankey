@@ -17,6 +17,19 @@ no 12m; janelas com observações ou referências anuais faltantes são omitidas
 A escala fixa vale para o histórico da análise selecionada, sem conversão cambial.
 O centro é contábil e não representa relações bilaterais entre categorias.
 
+Clique em um produto, parceiro ou título do fluxo para abrir Produto × País.
+O detalhe abrange os quatro países, conforme a cobertura das bases conjuntas,
+nos dois fluxos e no mensal ou 12 meses. Use 12 maiores, 30 maiores ou todos
+os países; o CSV inclui todas as células da seleção. Voltar ou Esc retorna.
+São valores originais; revisões da fonte e diferenças de classificação podem
+mudar a composição em relação às barras anteriores. Sem rateio de ajustes.
+Os 12 meses precisam estar completos. Meses ausentes na fonte não viram zero.
+O cruzamento chinês cobre jan/2016 a dez/2024. 2015 e 2025–2026 não retornaram
+registros no UN Comtrade e aguardam outra base para completar o cruzamento.
+
+Os dados detalhados estão comprimidos dentro do HTML. A abertura continua
+offline e requer navegador atual com DecompressionStream (Edge/Chrome/Firefox).
+
 ## Atualizar e verificar
 
 ```powershell

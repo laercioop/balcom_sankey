@@ -14,6 +14,7 @@ def main():
         errors = []
         page.on('pageerror', lambda e: errors.append(str(e)))
         page.goto((OUTPUT / 'index.html').as_uri())
+        page.wait_for_function('CROSS !== null',timeout=120000)
         assert page.locator('#drawing path').count() > 0
         checked = []
         for country in ['brasil', 'eua', 'ue', 'china']:
@@ -83,20 +84,55 @@ def main():
             assert page.locator('#cross-chart').count() == 1
             assert page.evaluate('(s)=>Math.abs(Number(document.querySelector("#cross-chart").dataset.total)-sum(crossRows(s,null).rows.map(r=>r.valor)))', side) < 1e-9
             page.keyboard.press('Escape')
+        page.evaluate('openCross(null,0)')
+        total_before=page.locator('#cross-chart').get_attribute('data-total')
+        page.select_option('#cross-limit','0')
+        assert page.locator('#cross-chart').get_attribute('data-total')==total_before
+        assert page.locator('#cross-chart text').count()>50
+        with page.expect_download() as exported:
+            page.click('#download-csv')
+        import csv,io
+        csv_rows=list(csv.reader(io.StringIO(Path(exported.value.path()).read_text(encoding='utf-8-sig')),delimiter=';'))
+        assert len(csv_rows)-1==page.evaluate('crossRows(0,null).rows.length')
+        page.select_option('#cross-limit','12')
+        page.keyboard.press('Escape')
         page.select_option('#mode', '12m')
         page.evaluate('openCross(null,1)')
-        assert 'não cobre todo este período' in page.locator('#cross-content').inner_text()
-        assert page.locator('#cross-chart').count() == 0
+        assert page.locator('#cross-chart').count() == 1
         page.keyboard.press('Escape')
         page.select_option('#country', 'eua')
+        # A divulgação do agregado por parceiro pode anteceder o cruzamento.
+        available = page.evaluate("dataset().frames.map((f,j)=>({f,j})).filter(({f})=>{const c=CROSS[country];return c&&c.version===2&&c.coverage.some(r=>r[0]===f.date&&r[1]==='exp')}).at(-1)?.j")
+        assert available is not None
+        page.select_option('#mode', 'mensal')
+        available = page.evaluate("dataset().frames.map((f,j)=>({f,j})).filter(({f})=>CROSS[country].coverage.some(r=>r[0]===f.date&&r[1]==='exp')).at(-1).j")
+        page.select_option('#month',str(available))
         page.evaluate('openCross(null,0)')
-        assert 'ainda não está disponível' in page.locator('#cross-content').inner_text()
+        assert page.locator('#cross-chart').count() == 1
         page.keyboard.press('Escape')
+        # Quatro países, ambos os lados e tipos: primeiro/último mês cobertos.
+        cross_checked = []
+        for selected in ['brasil','eua','ue','china']:
+            page.select_option('#country', selected)
+            for selected_mode in ['mensal','12m']:
+                page.select_option('#mode',selected_mode)
+                for analysis in ['parceiros','produtos']:
+                    page.click('[data-type="'+analysis+'"]')
+                    for side in [0,1]:
+                        covered = page.evaluate("(side)=>{const c=CROSS[country],fl=side?'imp':'exp',months=new Set(c.coverage.filter(r=>r[1]===fl).map(r=>r[0]));return dataset().frames.map((f,j)=>({f,j})).filter(({f})=>{let cursor=mode==='12m'?f.start:f.date;while(cursor<=f.date){if(!months.has(cursor))return false;const [y,m]=cursor.split('-').map(Number);cursor=m===12?(y+1)+'-01':y+'-'+String(m+1).padStart(2,'0')}return true}).map(x=>x.j)}",side)
+                        assert covered, (selected,selected_mode,analysis,side)
+                        for frame in sorted(set([covered[0],covered[-1]])):
+                            page.select_option('#month',str(frame))
+                            page.evaluate('(side)=>openCross(null,side)',side)
+                            assert page.locator('#cross-chart').count()==1
+                            assert page.evaluate('(side)=>Math.abs(Number(document.querySelector("#cross-chart").dataset.total)-sum(crossRows(side,null).rows.map(r=>r.valor)))',side)<1e-8
+                            page.keyboard.press('Escape')
+                        cross_checked.append([selected,selected_mode,analysis,side])
         page.select_option('#country', 'brasil')
         page.select_option('#mode', 'mensal')
         page.select_option('#month', '0')
         page.evaluate('openCross(null,0)')
-        assert 'não cobre todo este período' in page.locator('#cross-content').inner_text()
+        assert page.locator('#cross-chart').count() == 1
         page.keyboard.press('Escape')
         page.select_option('#month', page.locator('#slider').get_attribute('max'))
         page.locator('#drawing .category[aria-hidden="false"][aria-label$="comercial"]').locator('rect').first.click()
@@ -110,6 +146,7 @@ def main():
         assert d.value.suggested_filename.endswith('.csv')
         url = page.url
         page.reload()
+        page.wait_for_function('CROSS !== null',timeout=120000)
         assert page.url == url
         page.select_option('#speed', '500')
         page.select_option('#month', '0')
@@ -135,6 +172,7 @@ def main():
         # Exercise real motion as well as the reduced-motion checks above.
         page.emulate_media(reduced_motion='no-preference')
         page.reload()
+        page.wait_for_function('CROSS !== null',timeout=120000)
         page.set_viewport_size({'width': 1440, 'height': 1250})
         page.select_option('#month', page.locator('#slider').get_attribute('max'))
         page.evaluate('openCross(0,0)')
@@ -168,7 +206,7 @@ def main():
              'exportacoes_svg_csv': True, 'link_preservado': True, 'reproducao': True, 'mobile': True,
              'zoom_saldo_16_analises': True, 'zoom_categoria_teclado': True, 'zoom_mobile': True,
              'cruzamento_fluxo_mes_produto': True, 'titulos_cruzamento_teclado': True,
-             'cobertura_cruzamento_estrita': True,
+             'cobertura_cruzamento_estrita': True, 'cruzamentos_extremos': cross_checked,
              'detalhe_substitui_grafico': True, 'voltar_preserva_selecao': True,
              'transicao_detalhe_desktop_mobile': True, 'transicao_navegacao_rapida': True,
              'velocidades_4x_8x': True, 'periodo_acima_bolinha': True}, indent=2), encoding='utf-8')

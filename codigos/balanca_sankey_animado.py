@@ -4,6 +4,8 @@ Uso: python codigos/balanca_sankey_animado.py
 Não baixa nem reestima dados. Requer as bases auditadas da pasta 11.
 """
 import hashlib
+import base64
+import gzip
 import json
 from pathlib import Path
 
@@ -109,9 +111,19 @@ def main():
     from balanca_sankey_cruzado import carregar
     dados, validacao = preparar()
     cruzados = carregar()
+    for pais, base in cruzados.items():
+        audit=dict(base.get('validacao', {}))
+        if base.get('version')==2:
+            audit['cobertura']={}
+            for fluxo in ['exp','imp']:
+                meses=sorted(m for m,f in base['coverage'] if f==fluxo)
+                audit['cobertura'][fluxo]=dict(inicio=meses[0],fim=meses[-1],meses=len(meses),
+                    lacunas_internas=sorted(set(pd.period_range(meses[0],meses[-1],freq='M').astype(str))-set(meses)))
+        validacao['cruzado_' + pais] = audit
     template = Path(__file__).with_name('balanca_sankey_animado.html').read_text(encoding='utf-8')
     conteudo = template.replace('__DADOS_SANKEY__', json.dumps(dados, ensure_ascii=False, allow_nan=False))
-    conteudo = conteudo.replace('__CRUZADOS_SANKEY__', json.dumps(cruzados, ensure_ascii=False, allow_nan=False))
+    packed = gzip.compress(json.dumps(cruzados, ensure_ascii=False, allow_nan=False, separators=(',', ':')).encode('utf-8'), mtime=0)
+    conteudo = conteudo.replace('__CRUZADOS_GZIP__', base64.b64encode(packed).decode('ascii'))
     SAIDA.mkdir(parents=True, exist_ok=True)
     (SAIDA / 'brasil_sankey_mensal.html').write_text(conteudo, encoding='utf-8')
     (SAIDA / 'index.html').write_text(conteudo, encoding='utf-8')
@@ -119,7 +131,10 @@ def main():
     (SAIDA / 'validacao.json').write_text(json.dumps(validacao, ensure_ascii=False, indent=2), encoding='utf-8')
     print(SAIDA / 'brasil_sankey_mensal.html')
     for chave, v in validacao.items():
-        print(chave, v['inicio'], v['fim'], v['meses'])
+        if 'meses' in v:
+            print(chave, v['inicio'], v['fim'], v['meses'])
+        else:
+            print(chave, v)
 
 
 if __name__ == '__main__':

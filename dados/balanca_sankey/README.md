@@ -125,17 +125,55 @@ Preserve `brutos/` e os CSVs de auditoria.
 
 ### Detalhe Produto × País no painel animado
 
-`balanca_sankey_cruzado.py` agrega os CSVs anuais EXP/IMP locais do BALCOM,
-sem download, por mês, produto granular e país individual. Guarda hashes e
-confere as somas contra brasil_produtos.csv em brasil_produto_pais.json.
-Cobertura inicial: jan–out/2026, em US$ bilhões originais, sem ratear ajustes
-sazonais. O detalhe mantém fluxo e período selecionados. Exige cobertura
+`coleta_cruzado.py` coleta as bases conjuntas dos quatro países e
+`balanca_sankey_cruzado.py` as compacta com hashes e validações.
+O detalhe mantém fluxo e período selecionados, com valores originais na moeda
+da fonte e sem ratear ajustes sazonais. Exige cobertura
 integral para 12m; informa indisponibilidade quando falta cobertura ou base.
 Importações: países à esquerda → produtos à direita. Exportações: produtos
 à esquerda → países à direita. Categorias filtram produto ou parceiro/bloco;
 os títulos superiores abrem o fluxo completo. Os 12 maiores países do recorte
-ficam individuais, os demais em Outros países. O saldo mantém a reconciliação
-anterior. EUA/UE/China aguardam bases conjuntas; marginais não geram vínculos.
+ficam individuais, os demais em Outros países; o seletor permite 30 ou todos.
+O saldo mantém a reconciliação anterior. Marginais não geram vínculos.
 O cruzamento substitui o Sankey na própria tela. Voltar fica abaixo do total
 de exportações; Esc retorna também. A linha do tempo atualiza o detalhe e a
 volta preserva mês/país/análise. SVG/CSV exportam o cruzamento quando aberto.
+## Coleta do cruzamento histórico Produto × Parceiro
+
+Atualização: `python codigos/coleta_cruzado.py --paises brasil ue eua china`.
+Use `--eua-comtrade` para a alternativa aos dados diretos do Census.
+Credenciais apenas nas variáveis `CENSUS_API_KEY` e `COMTRADE_API_KEY`.
+`--offline` reaproveita os caches e não gasta cota. No Comtrade, permite
+compactar apenas os meses já coletados; o status continua incompleto se
+houver meses faltantes. Não confundir o JSON gerado com cobertura integral.
+
+Os JSONs `{pais}_produto_pais.json` v2 contêm dicionários e células mensais
+`[fluxo, produto, pais, bloco, valor_bilhoes]`, com índices nos dicionários.
+`coverage` declara pares `[mes, fluxo]` cuja partição foi coletada. Fonte,
+unidade, hashes, duplicatas e diferenças da base agregada ficam em `validacao`.
+O fechamento usa os totais oficiais da própria fonte; valores publicados sem
+detalhamento são identificados, nunca distribuídos entre produtos ou países.
+Não se fabricam vínculos a partir das bases marginais de produtos e parceiros.
+
+Brasil e UE são confrontados com todos os produtos comuns da pasta 11;
+Brasil também confere os totais com `CGCE` de `balcom_r.xlsx`. Divergências
+de versões/fontes no Comtrade são exportadas em `{pais}_cruzado_divergencias.csv`.
+Importações do Comtrade são CIF; diferem dos valores de alfândega do Census.
+O cruzamento mensal é original, sem ajuste sazonal. O acumulado exige 12 meses
+completos. Lacunas não viram zero. Consulte `coleta_cruzado_*_status.json`.
+
+Proteção da cota: `comtrade_cota.py`, 450 tentativas/24h em janela móvel,
+SQLite compartilhado por todos os processos do projeto, reserva antes do
+envio, sem repetição automática. Uma leitura de cache não consome cota.
+O registro não conhece chamadas feitas fora deste projeto. Testes de cota
+usam apenas SQLite temporário e transporte falso: `test_comtrade_cota.py`.
+
+O HTML continua autocontido: gzip/base64 descompactado localmente pelo navegador.
+O preparo da publicação não copia os brutos, o banco de cota ou credenciais.
+
+Reino Unido/UE27 em 2015–2020: soma dos 27 membros no Comext, com TOTAL
+confrontado ao agregado EU27_2020/GB. Não há rateio do total. Eventuais sobras
+sem capítulo ficam identificadas como Produto não detalhado, no filtro do
+grupo Instrumentos e diversos. Census: consultas por ano, mantendo MONTH
+separado e países conferidos contra o mundo para cada HS2/mês. Revisões e
+diferenças da base Comtrade anterior ficam em eua_cruzado_divergencias.csv.

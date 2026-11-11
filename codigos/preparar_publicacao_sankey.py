@@ -19,7 +19,8 @@ def main():
         shutil.copy2(ROOT / rel, p)
     for nome in ['balanca_sankey_animado.py', 'balanca_sankey_animado.html', 'balanca_sankey.py',
                  'comum.py', 'estilo_ps.py', 'sankey.py', 'verificar_sankey_html.py',
-                 'preparar_publicacao_sankey.py', 'balanca_sankey_cruzado.py']:
+                 'preparar_publicacao_sankey.py', 'balanca_sankey_cruzado.py',
+                 'coleta_cruzado.py', 'comtrade_cota.py', 'auditar_cruzados.py']:
         copiar('codigos/' + nome)
     for pais in ['brasil', 'eua', 'ue', 'china']:
         for tipo in ['parceiros', 'produtos']:
@@ -28,7 +29,11 @@ def main():
     for nome in ['valores_graficos.csv', 'README.md']:
         copiar('dados/balanca_sankey/' + nome)
     for p in (ROOT / 'dados/balanca_sankey').glob('*_produto_pais.json'):
-        copiar(p.relative_to(ROOT))
+        payload = json.loads(p.read_text(encoding='utf-8'))
+        payload['hashes'] = {Path(k).name:v for k,v in payload.get('hashes',{}).items()}
+        target = DEST / p.relative_to(ROOT)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(json.dumps(payload,ensure_ascii=False,allow_nan=False,separators=(',',':')),encoding='utf-8')
     original = json.loads((ROOT / 'dados/balanca_sankey/fontes.json').read_text(encoding='utf-8'))
     manifesto = dict(cobertura=original['cobertura'], bases=[dict(arquivo=Path(x['arquivo']).name,
                     sha256=x['sha256']) for x in original['bases']])

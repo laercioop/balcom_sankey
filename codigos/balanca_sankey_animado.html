@@ -68,7 +68,13 @@ dialog{width:min(850px,calc(100% - 24px));max-height:88vh;border:1px solid #d4d8
 <script>
 'use strict';
 const DATA=__DADOS_SANKEY__;
-const CROSS=__CRUZADOS_SANKEY__;
+let CROSS=null,crossLoadError=null;
+const crossReady=(async()=>{
+ const raw=atob('__CRUZADOS_GZIP__'),bytes=new Uint8Array(raw.length);
+ for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
+ CROSS=await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).json();
+ return CROSS;
+})();
 const $=id=>document.getElementById(id), NS='http://www.w3.org/2000/svg';
 const fmt=v=>v.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1});
 const pct=v=>v.toLocaleString('pt-BR',{maximumFractionDigits:1})+'%';
@@ -76,7 +82,8 @@ const months=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov',
 const date=s=>months[Number(s.slice(5))-1]+'/'+s.slice(0,4);
 const sum=a=>a.reduce((s,v)=>s+v,0);
 let country='brasil',mode='mensal',type='parceiros',index=0,playing=false,timer=null,raf=null,current=null,items=[];
-let crossSelection=null,crossTrigger=null;
+let crossSelection=null,crossTrigger=null,crossLimit=12;
+crossReady.then(()=>{if(crossSelection)renderCrossView()}).catch(()=>{crossLoadError='Não foi possível carregar os detalhes. Abra em uma versão atual do Edge, Chrome ou Firefox.';if(crossSelection)renderCrossView()});
 let finishViewTransition=null;
 const dataset=()=>DATA[[country,type,mode].join('_')];
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -159,13 +166,22 @@ function show(animate=false){
 }
 function pause(){playing=false;clearTimeout(timer);$('play').textContent='▶ Reproduzir'}
 function crossRows(side,i){
+ if(!CROSS)return {error:crossLoadError||'Carregando o histórico detalhado…'};
  const d=dataset(),f=d.frames[index],base=CROSS[country];
  if(!base)return {error:'O cruzamento Produto × País ainda não está disponível para '+d.label+'.'};
  const fluxo=side?'imp':'exp',start=mode==='12m'?f.start:f.date;
- const rows=base.rows.map(r=>Object.fromEntries(base.columns.map((c,j)=>[c,r[j]])));
- const covered=new Set(rows.filter(r=>r.fluxo===fluxo).map(r=>r.date));
+ const covered=new Set(base.version===2?base.coverage.filter(r=>r[1]===fluxo).map(r=>r[0]):base.rows.filter(r=>r[base.columns.indexOf('fluxo')]===fluxo).map(r=>r[base.columns.indexOf('date')]));
  let cursor=start;while(cursor<=f.date){if(!covered.has(cursor))return {error:'O cruzamento Produto × País não cobre todo este período. Nenhum mês foi substituído. Cobertura disponível: '+date([...covered].sort()[0])+' a '+date([...covered].sort().at(-1))+'.'};const [y,m]=cursor.split('-').map(Number);cursor=m===12?(y+1)+'-01':y+'-'+String(m+1).padStart(2,'0')}
- return {rows:rows.filter(r=>r.fluxo===fluxo&&r.date>=start&&r.date<=f.date&&(i===null||(type==='produtos'?r.produto===d.names[i]:r.bloco===d.names[i])))};
+ const rows=[];
+ if(base.version===2){
+  const keys=['fluxo','produto','pais','bloco'],dict=base.dictionaries;
+  for(const mes of [...covered].filter(m=>m>=start&&m<=f.date).sort())for(const r of base.months[mes]||[]){
+   if(dict.fluxo[r[0]]!==fluxo)continue;
+   if(i!==null&&(type==='produtos'?(dict.produto[r[1]]==='Produto não detalhado'?'Instrumentos e diversos':dict.produto[r[1]]):dict.bloco[r[3]])!==d.names[i])continue;
+   const row={date:mes,valor:r[4]};keys.forEach((key,j)=>row[key]=dict[key][r[j]]);rows.push(row);
+  }
+ }else for(const r of base.rows){const row=Object.fromEntries(base.columns.map((c,j)=>[c,r[j]]));if(row.fluxo===fluxo&&row.date>=start&&row.date<=f.date&&(i===null||(type==='produtos'?row.produto===d.names[i]:row.bloco===d.names[i])))rows.push(row)}
+ return {rows};
 }
 // Keep the live view immediately usable; only its visual snapshot fades away.
 // Cancelling before another navigation prevents stale layers or delayed state changes.
@@ -224,15 +240,20 @@ function renderCrossView(){
  const result=crossRows(side,i);
  if(result.error){const p=document.createElement('p');p.textContent=result.error;content.appendChild(p)}else{
   renderCross(result.rows,side,i);
-  const p=document.createElement('p');p.textContent='Fonte: MDIC / Comex Stat. Países individualizados; após os 12 maiores do período, os demais são somados em “Outros países”. '+(mode==='mensal'?'Os valores originais deste detalhe podem diferir das barras dessazonalizadas.':'');content.appendChild(p);
+  if(CROSS[country]?.validacao?.divergencias_pasta11){const note=document.createElement('p');note.textContent='Revisões da fonte e diferenças de classificação podem mudar a composição em relação ao gráfico anterior.';content.appendChild(note)}
+  const p=document.createElement('p');p.textContent='Fonte: '+(CROSS[country]?.validacao?.fonte||d.source)+'. '+(crossLimit?'Após os '+crossLimit+' maiores países, os demais são somados em “Outros países”. ':'Todos os países da seleção estão exibidos. ')+(mode==='mensal'?'Os valores originais deste detalhe podem diferir das barras dessazonalizadas.':'')+' Valores sem detalhamento publicado aparecem identificados.';content.appendChild(p);
  }
 }
 function renderCross(rows,side,i){
  const content=$('cross-content'),total=sum(rows.map(r=>r.valor));
+ const label=document.createElement('label');label.textContent='Países exibidos';label.style.cssText='display:flex;align-items:center;gap:8px;margin:10px 0';
+ const select=document.createElement('select');select.id='cross-limit';select.setAttribute('aria-label','Países exibidos');
+ for(const [value,name] of [[12,'12 maiores'],[30,'30 maiores'],[0,'Todos os países']]){const option=document.createElement('option');option.value=value;option.textContent=name;select.appendChild(option)}
+ select.value=String(crossLimit);select.onchange=()=>{crossLimit=Number(select.value);renderCrossView();$('cross-limit').focus({preventScroll:true})};label.appendChild(select);content.appendChild(label);
  const summary=document.createElement('p');summary.textContent='Total: '+dataset().currency+' '+fmt(total)+' bi';content.appendChild(summary);
- if(total<=0){summary.textContent='Sem comércio nesta seleção.';return}
+ if(total<=0){summary.textContent='Sem valores publicados no cruzamento desta seleção.';return}
  const ranks=new Map();for(const r of rows)ranks.set(r.pais,(ranks.get(r.pais)||0)+r.valor);
- const top=new Set([...ranks].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).slice(0,12).map(r=>r[0]));
+ const top=new Set([...ranks].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).slice(0,crossLimit||ranks.size).map(r=>r[0]));
  const links=new Map();for(const r of rows){const partner=top.has(r.pais)?r.pais:'Outros países',key=JSON.stringify([r.produto,partner]);links.set(key,(links.get(key)||0)+r.valor)}
  const values=[...links].map(([k,v])=>{const [product,partner]=JSON.parse(k);return {left:side?partner:product,right:side?product:partner,product,value:v}}).filter(r=>r.value>0);
  const totals=key=>{const m=new Map();for(const r of values)m.set(r[key],(m.get(r[key])||0)+r.value);return [...m].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))};
@@ -244,6 +265,7 @@ function renderCross(rows,side,i){
  text(330,24,side?'PAÍS DE ORIGEM':'PRODUTO',{'text-anchor':'end','font-size':14,'font-weight':700},svg);text(670,24,side?'PRODUTO':'PAÍS DE DESTINO',{'font-size':14,'font-weight':700},svg);
  function slots(entries){let y=50+(height-used(entries,scale))/2;return new Map(entries.map(([name,v])=>{const h=v*scale,slot=Math.max(46,h),node={y:y+(slot-h)/2,h,offset:0,value:v};y+=slot+gap;return [name,node]}))}
  const ls=slots(left),rs=slots(right),colors=new Map(DATA[country+'_produtos_'+mode].names.map((n,j)=>[n,DATA[country+'_produtos_'+mode].colors[j]]));
+ colors.set('Produto não detalhado','#bcbcbc');
  for(const r of values){const l=ls.get(r.left),q=rs.get(r.right),a=l.y+l.offset,b=q.y+q.offset,h=r.value*scale;l.offset+=h;q.offset+=h;
   const path=el('path',{d:`M340,${a} C500,${a} 500,${b} 660,${b} L660,${b+h} C500,${b+h} 500,${a+h} 340,${a+h} Z`,fill:colors.get(r.product)||'#4a7fb5','fill-opacity':.42,class:'band'},svg);
   el('title',{},path).textContent=r.left+' → '+r.right+' · '+fmt(r.value)+' bi · '+pct(r.value/total*100);

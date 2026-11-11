@@ -342,5 +342,113 @@
     "duplicatas": 0,
     "fechamento_validado": true,
     "ultimo_mes_confere_pasta_11": true
+  },
+  "cruzado_brasil": {
+    "duplicatas": 0,
+    "produtos_conferidos": 4828,
+    "divergencias_pasta11": 0,
+    "maior_diferenca_pasta11": 0.0,
+    "ultimo_mes": "2026-10",
+    "primeiro_mes": "2015-01",
+    "unidade": "USD",
+    "ajuste": "original",
+    "fonte": "MDIC / Comex Stat",
+    "observacao": "Comparação informativa entre versões/fontes; valores não rateados.",
+    "sha256_base_cruzada": "cbda3f65f5e7afa586266854798019e0d5b08c048db4fa97ef0c70f5165ea5fb",
+    "cobertura": {
+      "exp": {
+        "inicio": "2015-01",
+        "fim": "2026-10",
+        "meses": 142,
+        "lacunas_internas": []
+      },
+      "imp": {
+        "inicio": "2015-01",
+        "fim": "2026-10",
+        "meses": 142,
+        "lacunas_internas": []
+      }
+    }
+  },
+  "cruzado_china": {
+    "duplicatas": 0,
+    "produtos_conferidos": 2720,
+    "divergencias_pasta11": 2719,
+    "maior_diferenca_pasta11": 3813648453.0,
+    "ultimo_mes": "2024-12",
+    "primeiro_mes": "2016-01",
+    "unidade": "USD",
+    "ajuste": "original",
+    "fonte": "GACC reportado ao UN Comtrade (importações CIF; exportações FOB)",
+    "observacao": "Comparação informativa entre versões/fontes; valores não rateados.",
+    "sha256_base_cruzada": "85de0cada5c59b89d5ed2c6e21629595a56e6ec7976abf73149d4fa8c4cc6f43",
+    "cobertura": {
+      "exp": {
+        "inicio": "2016-01",
+        "fim": "2024-12",
+        "meses": 108,
+        "lacunas_internas": []
+      },
+      "imp": {
+        "inicio": "2016-01",
+        "fim": "2024-12",
+        "meses": 108,
+        "lacunas_internas": []
+      }
+    }
+  },
+  "cruzado_eua": {
+    "duplicatas": 0,
+    "produtos_conferidos": 4760,
+    "divergencias_pasta11": 4120,
+    "maior_diferenca_pasta11": 5978017478.0,
+    "ultimo_mes": "2026-09",
+    "primeiro_mes": "2015-01",
+    "unidade": "USD",
+    "ajuste": "original",
+    "fonte": "US Census (importações gerais, valor de alfândega)",
+    "observacao": "Comparação informativa entre versões/fontes; valores não rateados.",
+    "sha256_base_cruzada": "e2362e72d4f6093393c798f22e8fa93f672dbfddc7c6a7cee395adad2f8fcde3",
+    "cobertura": {
+      "exp": {
+        "inicio": "2015-01",
+        "fim": "2026-09",
+        "meses": 141,
+        "lacunas_internas": []
+      },
+      "imp": {
+        "inicio": "2015-01",
+        "fim": "2026-09",
+        "meses": 141,
+        "lacunas_internas": []
+      }
+    }
+  },
+  "cruzado_ue": {
+    "duplicatas": 0,
+    "produtos_conferidos": 4760,
+    "divergencias_pasta11": 0,
+    "maior_diferenca_pasta11": 884.0,
+    "ultimo_mes": "2026-08",
+    "primeiro_mes": "2015-01",
+    "unidade": "EUR",
+    "ajuste": "original",
+    "fonte": "Eurostat Comext DS-045409 (Reino Unido até 2020: soma dos 27 membros)",
+    "observacao": "Comparação informativa entre versões/fontes; valores não rateados.",
+    "sha256_base_cruzada": "eb9a646148dcda2146b64a2f76c1a1ddc03af39884b729470492a04fb27f28f0",
+    "cobertura": {
+      "exp": {
+        "inicio": "2015-01",
+        "fim": "2026-08",
+        "meses": 140,
+        "lacunas_internas": []
+      },
+      "imp": {
+        "inicio": "2015-01",
+        "fim": "2026-08",
+        "meses": 140,
+        "lacunas_internas": []
+      }
+    }
   }
 }
