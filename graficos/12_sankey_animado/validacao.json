@@ -372,27 +372,27 @@
   },
   "cruzado_china": {
     "duplicatas": 0,
-    "produtos_conferidos": 2720,
-    "divergencias_pasta11": 2719,
+    "produtos_conferidos": 3434,
+    "divergencias_pasta11": 3107,
     "maior_diferenca_pasta11": 3813648453.0,
-    "ultimo_mes": "2024-12",
-    "primeiro_mes": "2016-01",
+    "ultimo_mes": "2026-09",
+    "primeiro_mes": "2015-01",
     "unidade": "USD",
     "ajuste": "original",
-    "fonte": "GACC reportado ao UN Comtrade (importações CIF; exportações FOB)",
+    "fonte": "GACC: UN Comtrade em 2016–2024 e plataforma de consulta da GACC nos demais meses (importações CIF; exportações FOB)",
     "observacao": "Comparação informativa entre versões/fontes; valores não rateados.",
-    "sha256_base_cruzada": "85de0cada5c59b89d5ed2c6e21629595a56e6ec7976abf73149d4fa8c4cc6f43",
+    "sha256_base_cruzada": "3e0370a892a87ecdf2c39ca2d39570896f6a0299958bbb2534567a7daa2a6cb5",
     "cobertura": {
       "exp": {
-        "inicio": "2016-01",
-        "fim": "2024-12",
-        "meses": 108,
+        "inicio": "2015-01",
+        "fim": "2026-09",
+        "meses": 141,
         "lacunas_internas": []
       },
       "imp": {
-        "inicio": "2016-01",
-        "fim": "2024-12",
-        "meses": 108,
+        "inicio": "2015-01",
+        "fim": "2026-09",
+        "meses": 141,
         "lacunas_internas": []
       }
     }

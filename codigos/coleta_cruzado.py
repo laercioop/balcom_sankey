@@ -7,19 +7,22 @@ Uma falha de país não impede processar os demais; cobertura incompleta é erro
 no status final, nunca uma aprovação de cobertura integral.
 """
 import argparse
+import csv
 import gzip
+import io
 import json
 import os
 import time
 import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 from comum import DADOS, PASTAS_DADOS, MAPA_GRANULAR
-from balanca_sankey_cruzado import (BASE, CACHE, COLS, EU2, NOMES, bloco,
+from balanca_sankey_cruzado import (BASE, CACHE, COLS, EU2, EU3, NOMES, bloco,
                                     compactar, gravar_json)
 
 MDIC = 'https://balanca.mdic.gov.br/balanca/bd/comexstat-bd/ncm/{}_{ano}.csv'
@@ -310,19 +313,132 @@ def preparar_census(offline):
     return compactar('eua',d,fontes,cobertura,'US Census (importações gerais, valor de alfândega)')
 
 
+GACC_MANUAL = CACHE / 'china_manual'
+GACC_PARCEIROS = Path(__file__).with_name('gacc_parceiros.csv')
+GACC_CAB = ['Date of data', 'Commodity code', 'Commodity', 'Trading partner code', 'Trading partner', 'US dollar']
+GACC_LIMITE = 10000
+ASEAN3 = set('BRN KHM IDN LAO MYS MMR PHL SGP THA TLS VNM'.split())
+# Comtrade usa códigos regionais "nes"; S19 ("Other Asia, nes") é Taiwan
+# quando a China é a reportante.
+NES = dict(S19='Taiwan', _X='Países não especificados', O19='Outros territórios da Oceania',
+           E19='Outros territórios da Europa', F19='Outros territórios da África',
+           A59='Outros territórios da América do Norte', A79='Outros territórios da América Latina')
+
+
+def nomes_iso():
+    """Nomes em português por ISO3 (tabela MDIC), com nomes curtos usados nos blocos."""
+    aux = DADOS / 'sankey/brutos/paises.csv'
+    nomes = pd.read_csv(aux).set_index('CO_PAIS_ISOA3').NO_PAIS.to_dict()
+    nomes.update(USA='EUA', CHN='China', GBR='Reino Unido', CHE='Suíça',
+                 KOR='Coreia do Sul', JPN='Japão', BRA='Brasil', HKG='Hong Kong', RUS='Rússia',
+                 DEU='Alemanha', PNG='Papua Nova Guiné', UMI='Ilhas menores dos EUA',
+                 TWN='Taiwan', MYT='Mayotte', JEY='Jersey', GGY='Guernsey', MAF='São Martinho')
+    # A tabela MDIC contém códigos históricos com o mesmo ISO3 (ex.: DEU
+    # para Alemanha Oriental). Não permitir que o último sobrescreva o atual.
+    nomes.pop('ZZZ', None)
+    return nomes, aux
+
+
+def bloco_china(iso, nome, principais):
+    if iso in EU3:
+        return 'União Europeia'
+    if iso in ASEAN3:
+        return 'ASEAN'
+    return nome if nome in principais else 'Demais parceiros'
+
+
+def ler_gacc(p):
+    """CSV da plataforma GACC: GB18030, campos entre aspas (alguns com quebra
+    de linha), valor em US$ com separador de milhar e vírgula final."""
+    linhas = list(csv.reader(io.StringIO(p.read_text(encoding='gb18030'))))
+    if [c.strip() for c in linhas[0][:6]] != GACC_CAB:
+        raise ValueError(f'{p.name}: cabeçalho GACC inesperado')
+    if any(len(x) != 7 or x[6] != '' for x in linhas[1:]):
+        raise ValueError(f'{p.name}: linha com número de campos inesperado')
+    d = pd.DataFrame([x[:6] for x in linhas[1:]], columns=['mes', 'hs2', 'produto_gacc', 'codigo', 'parceiro', 'usd'])
+    d['valor'] = pd.to_numeric(d.usd.str.replace(',', '', regex=False), errors='raise')
+    return d
+
+
+def linhas_gacc(principais):
+    """Partições mensais da plataforma GACC (china_manual/gacc_{fluxo}_{AAAAMM}.csv).
+
+    Importações vêm completas e entram como publicadas. Exportações vêm
+    ordenadas por valor e cortadas em 10.000 linhas: a sobra positiva de cada
+    capítulo contra china_hs2.csv vira "Parceiro não detalhado". Diferenças
+    negativas são revisões da plataforma e não alteram as células.
+    Sem china_hs2.csv para o mês (2015), o arquivo truncado entra como está.
+    """
+    nomes, aux = nomes_iso()
+    mapa = pd.read_csv(GACC_PARCEIROS, dtype=str, keep_default_na=False).set_index('codigo_gacc')
+    ref = pd.read_csv(PASTAS_DADOS['china'] / 'china_hs2.csv', dtype={'hs2': str})
+    ref = ref[ref.hs2 != 'TOTAL'].set_index(['date', 'fluxo', 'hs2']).valor * 1000  # US$ mil -> US$
+    arquivos = sorted(GACC_MANUAL.glob('gacc_*_*.csv'))
+    partes, fontes, cobertura, resumo = [], [aux, GACC_PARCEIROS, PASTAS_DADOS['china'] / 'china_hs2.csv'], [], []
+    for p in arquivos:
+        partes_nome = p.stem.split('_')
+        if len(partes_nome) != 3 or partes_nome[1] not in ('exp', 'imp') or not partes_nome[2].isdigit():
+            raise ValueError(f'Nome fora do padrão gacc_{{exp|imp}}_AAAAMM.csv: {p.name}')
+        fl, aaaamm = partes_nome[1], partes_nome[2]
+        mes = aaaamm[:4] + '-' + aaaamm[4:]
+        d = ler_gacc(p)
+        if set(d.mes) != {aaaamm}:
+            raise ValueError(f'{p.name}: meses {sorted(set(d.mes))} no arquivo')
+        if not d.hs2.str.fullmatch(r'\d{2}').all() or (d.valor < 0).any():
+            raise ValueError(f'{p.name}: capítulo ou valor inválido')
+        if d.duplicated(['hs2', 'codigo']).any():
+            raise ValueError(f'{p.name}: capítulo x parceiro duplicado')
+        novos = set(d.codigo) - set(mapa.index)
+        if novos:
+            raise ValueError(f'{p.name}: parceiros GACC sem mapeamento em {GACC_PARCEIROS.name}: {sorted(novos)}')
+        m = mapa.reindex(d.codigo)
+        d['pais'] = [pt or nomes.get(iso, iso) for iso, pt in zip(m.iso3, m.nome_pt)]
+        d['bloco'] = [bloco_china(iso, n, principais) for iso, n in zip(m.iso3, d.pais)]
+        n_linhas = len(d)
+        truncado = n_linhas >= GACC_LIMITE
+        sobra = 0.0
+        if truncado and mes in ref.index.get_level_values(0):
+            r = ref.xs((mes, fl), level=['date', 'fluxo'])
+            s = r.sub(d.groupby('hs2').valor.sum(), fill_value=0)
+            s = s[s > 0]
+            sobra = float(s.sum())
+            d = pd.concat([d, pd.DataFrame(dict(hs2=s.index, valor=s.values,
+                pais='Parceiro não detalhado', bloco='Demais parceiros'))], ignore_index=True)
+        d['date'], d['fluxo'] = mes, fl
+        d['produto'] = d.hs2.astype(int).map(MAPA_GRANULAR).fillna(MAPA_GRANULAR[99])
+        partes.append(d.groupby(COLS).valor.sum())
+        fontes.append(p)
+        cobertura.append((mes, fl))
+        resumo.append(dict(arquivo=p.name, linhas=n_linhas, truncado=truncado, sobra_usd=sobra))
+    if len(set(cobertura)) != len(cobertura):
+        raise ValueError('GACC: mês/fluxo repetido em china_manual')
+    if not partes:
+        return None, fontes, cobertura, resumo
+    return pd.concat(partes).groupby(level=list(range(5))).sum().reset_index(), fontes, cobertura, resumo
+
+
 def preparar_china(offline):
-    # Entrada real normalizada de GACC/Comtrade; não são marginais nem dados
-    # espelhados. O fornecedor deve fornecer também a cobertura completa.
-    p = CACHE / 'china/produto_pais.csv.gz'
-    meta = CACHE / 'china/cobertura.json'
-    if not p.exists() or not meta.exists():
-        return preparar_comtrade_china(offline)
-    m = json.loads(meta.read_text(encoding='utf-8'))
-    d = pd.read_csv(p)
-    assert set(COLS+['valor']) <= set(d), 'Contrato China: date,fluxo,produto,pais,bloco,valor (USD)'
-    # Campo obrigatório impede declarar uma amostra como cobertura completa.
-    assert m['particao_completa'] is True and m['moeda'] == 'USD'
-    return compactar('china',d,[p,meta],m['coverage'],m['fonte'])
+    """Comtrade (GACC reportado à ONU, 2016–2024) + plataforma GACC (demais meses).
+
+    Um mês/fluxo vem de uma só fonte: o Comtrade quando publicado; senão,
+    o arquivo manual da GACC.
+    """
+    principais = set(pd.read_csv(BASE / 'china_parceiros.csv').serie)
+    ct, fontes_ct, cob_ct = linhas_comtrade('china', offline)
+    gacc, fontes_g, cob_g, resumo = linhas_gacc(principais)
+    usar = sorted(set(cob_g) - set(cob_ct))
+    partes = [ct] if ct is not None else []
+    if gacc is not None and usar:
+        chave = pd.MultiIndex.from_frame(gacc[['date', 'fluxo']])
+        partes.append(gacc[chave.isin(usar)])
+    if not partes:
+        raise ValueError('China: nenhuma partição mensal disponível')
+    d = pd.concat(partes, ignore_index=True)
+    gravar_json(BASE / 'china_gacc_manual_resumo.json', resumo)
+    print('China: Comtrade', len(cob_ct), 'mês/fluxo; GACC', len(usar), 'mês/fluxo', flush=True)
+    fonte = ('GACC: UN Comtrade em 2016–2024 e plataforma de consulta da GACC nos demais meses '
+             '(importações CIF; exportações FOB)')
+    return compactar('china', d, fontes_ct + fontes_g, cob_ct + usar, fonte)
 
 
 def respostas_comtrade(pais, meses, offline):
@@ -351,18 +467,20 @@ def respostas_comtrade(pais, meses, offline):
 
 
 def preparar_comtrade_china(offline, pais='china'):
-    from balanca_sankey_cruzado import EU3
+    d, fontes, cobertura = linhas_comtrade(pais, offline)
+    if d is None:
+        raise ValueError(f'{pais}: nenhuma partição mensal completa disponível na fonte')
+    fonte = ('GACC' if pais == 'china' else 'US Census') + ' reportado ao UN Comtrade (importações CIF; exportações FOB)'
+    return compactar(pais,d,fontes,cobertura,fonte)
+
+
+def linhas_comtrade(pais, offline):
     ini, fim = intervalo(pais)
     # Parte anterior a 2018 só aparece nos parceiros da pasta 11; o cruzamento
     # também a solicita. Meses vazios permanecem fora da cobertura.
-    aux = DADOS / 'sankey/brutos/paises.csv'
-    nomes = pd.read_csv(aux).set_index('CO_PAIS_ISOA3').NO_PAIS.to_dict()
-    nomes.update(USA='EUA', CHN='China', GBR='Reino Unido', CHE='Suíça',
-                 KOR='Coreia do Sul', JPN='Japão', BRA='Brasil', HKG='Hong Kong', RUS='Rússia',
-                 DEU='Alemanha', PNG='Papua Nova Guiné', UMI='Ilhas menores dos EUA')
-    # A tabela MDIC contém códigos históricos com o mesmo ISO3 (ex.: DEU
-    # para Alemanha Oriental). Não permitir que o último sobrescreva o atual.
-    nomes.pop('ZZZ',None)
+    nomes, aux = nomes_iso()
+    if pais == 'china':
+        nomes.update(NES)
     principais = set(pd.read_csv(BASE / (pais + '_parceiros.csv')).serie)
     partes, fontes, cobertura = [], [aux], []
     meses = list(reversed(pd.period_range(ini, fim, freq='M').astype(str).tolist()))
@@ -394,14 +512,14 @@ def preparar_comtrade_china(offline, pais='china'):
             # de quatro dígitos são agregados, excluídos para não somar duas vezes.
             if co >= 1000 or not (len(hs)==2 and hs.isdigit()):
                 continue
-            iso = r.get('partnerISO') or ''
+            iso = (r.get('partnerISO') or '').strip()
             nome = nomes.get(iso, r.get('partnerDesc') or f'Área ONU {co}')
-            b = 'União Europeia' if iso in EU3 else 'ASEAN' if pais == 'china' and iso in set('BRN KHM IDN LAO MYS MMR PHL SGP THA TLS VNM'.split()) else nome if nome in principais else 'Demais parceiros'
-            rows.append(dict(date=mes,fluxo=fl,hs2=hs,produto=MAPA_GRANULAR.get(int(hs),MAPA_GRANULAR[99]),pais=nome,bloco=b,valor=v))
+            b = bloco_china(iso, nome, principais) if pais == 'china' else 'União Europeia' if iso in EU3 else nome if nome in principais else 'Demais parceiros'
+            rows.append(dict(date=mes,fluxo=fl,hs2=hs,produto=MAPA_GRANULAR.get(int(hs),MAPA_GRANULAR[99]),pais=nome,bloco=b,valor=v,co=co))
         d = pd.DataFrame(rows)
         if d.empty:
             continue
-        if d.duplicated(['fluxo','hs2','pais']).any():
+        if d.duplicated(['fluxo','hs2','co']).any():
             raise ValueError(f'China {mes}: duplicatas na fonte')
         soma = d.groupby(['fluxo','hs2']).valor.sum()
         for (fl,hs), v in mundo.items():
@@ -422,10 +540,8 @@ def preparar_comtrade_china(offline, pais='china'):
         partes.append(pd.DataFrame(rows).groupby(COLS).valor.sum())
         print(pais,mes,'pronto',flush=True)
     if not partes:
-        raise ValueError('China: nenhuma partição mensal completa disponível na fonte')
-    d = pd.concat(partes).groupby(level=list(range(5))).sum().reset_index()
-    fonte = ('GACC' if pais == 'china' else 'US Census') + ' reportado ao UN Comtrade (importações CIF; exportações FOB)'
-    return compactar(pais,d,fontes,cobertura,fonte)
+        return None, fontes, cobertura
+    return pd.concat(partes).groupby(level=list(range(5))).sum().reset_index(), fontes, cobertura
 
 
 def main():
