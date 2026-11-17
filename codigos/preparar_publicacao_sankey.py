@@ -17,7 +17,7 @@ def main():
         p = DEST / (target or rel)
         p.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(ROOT / rel, p)
-    for nome in ['balanca_sankey_animado.py', 'balanca_sankey_animado.html', 'balanca_sankey.py',
+    for nome in ['series_destinos.py', 'series_extrativa_eua.py', 'balanca_sankey_animado.py', 'balanca_sankey_animado.html', 'balanca_sankey.py',
                  'comum.py', 'estilo_ps.py', 'sankey.py', 'verificar_sankey_html.py',
                  'preparar_publicacao_sankey.py', 'balanca_sankey_cruzado.py',
                  'coleta_cruzado.py', 'comtrade_cota.py', 'auditar_cruzados.py']:
@@ -40,6 +40,14 @@ def main():
     (DEST / 'dados/balanca_sankey/fontes.json').write_text(json.dumps(manifesto, ensure_ascii=False, indent=2), encoding='utf-8')
     for p in (ROOT / 'graficos/11_balanca_comercial').glob('*/*.png'):
         copiar(p.relative_to(ROOT))
+    for p in (ROOT / 'graficos/9_exp_brasil_para_EUA').rglob('*'):
+        if p.is_file() and p.suffix in {'.png', '.md'}:
+            copiar(p.relative_to(ROOT))
+    for nome in ['series_extrativa_eua_mundo.csv', 'extrativa_originais_eua_mundo.csv', 'diagnostico_extrativa_eua_mundo.csv',
+                 'classificacao_extrativa.csv', 'series_produtos_destinos.csv']:
+        p = ROOT / 'dados/sankey' / nome
+        if p.exists():
+            copiar(p.relative_to(ROOT))
     for nome in ['index.html', 'brasil_sankey_mensal.html', '.nojekyll', 'validacao.json',
                  'validacao_navegador.json', 'README.md']:
         p = ROOT / 'graficos/12_sankey_animado' / nome

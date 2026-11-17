@@ -1,0 +1,17 @@
+destino,serie,inicio_ajuste,status,nivel,modo,transform,arima,td,pascoa,feriados,n_outliers,outliers,m7,q,ids,reserva_nao_negativo
+EUA,Exportações totais,1997-01,ok,0,multiplicative,Log(y),(0 1 1)(0 1 1),td,no,yes,2,LS2008.Dec AO2018.May,0.397,0.74,yes,
+EUA,Petróleo bruto,2010-01,ok,0,multiplicative,Log(y),(0 1 1),no,no,yes,0,,1.309,1.79,yes,
+EUA,Indústria extrativa,1997-01,"ok, sazonalidade não identificável",0,multiplicative,Log(y),(0 1 1)(0 1 1),no,no,no,2,AO2008.Apr AO2009.Jan,1.326,1.69,no,
+EUA,"Gás, carvão e outros energéticos",2010-01,"sem ajuste (87% zeros, 202 obs)",,,,,,,,,,,,,
+EUA,Minerais não metálicos,1997-01,"ok, sazonalidade não identificável",0,multiplicative,Log(y),(0 1 2),no,no,no,1,TC2025.Sep,1.998,2.25,no,
+EUA,Minério de cobre,2010-01,"sem ajuste (97% zeros, 202 obs)",,,,,,,,,,,,,
+EUA,Minério de ferro,2010-01,"sem ajuste (13% zeros, 202 obs)",,,,,,,,,,,,,
+EUA,Outros minérios metálicos,2010-01,sem ajuste: reservas X-13 negativas ou falha,,,,,,,,,,,,,True
+Mundo,Exportações totais,1997-01,ok,0,multiplicative,Log(y),(0 1 1)(0 1 1),td,yes,yes,3,LS2002.Jul TC2008.May LS2008.Dec,0.234,0.40,yes,
+Mundo,Petróleo bruto,2001-01,"ok, sazonalidade não identificável",0,multiplicative,Log(y),(0 1 1),no,no,yes,4,AO2001.Mar AO2005.Jun AO2008.Apr TC2009.Jan,1.291,1.29,no,
+Mundo,Indústria extrativa,1997-01,ok,0,multiplicative,Log(y),(0 1 1)(0 1 1),td,no,no,3,AO2002.Jun AO2004.Apr LS2008.May,0.655,0.90,yes,
+Mundo,"Gás, carvão e outros energéticos",2010-01,sem ajuste: reservas X-13 negativas ou falha,,,,,,,,,,,,,True
+Mundo,Minerais não metálicos,1997-01,"ok, sazonalidade não identificável",0,multiplicative,Log(y),(0 1 2)(0 1 1),no,yes,yes,1,AO2004.Jan,1.094,1.49,no,
+Mundo,Minério de cobre,2007-01,"ok, sazonalidade não identificável",0,multiplicative,Log(y),(1 0 2)(0 1 1),td,no,no,2,TC2008.Nov TC2009.Feb,1.299,1.89,no,
+Mundo,Minério de ferro,1997-01,ok,0,multiplicative,Log(y),(0 1 1)(0 1 1),td,yes,no,5,AO1998.Jan AO2002.Jun AO2003.Dec AO2006.May TC2008.Mar,0.575,0.70,yes,
+Mundo,Outros minérios metálicos,1997-01,"ok, sazonalidade não identificável",0,multiplicative,Log(y),(0 1 1)(0 1 1),no,no,no,1,LS2008.Nov,1.762,2.00,no,
